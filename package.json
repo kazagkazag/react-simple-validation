@@ -1,6 +1,6 @@
 {
     "name": "react-simple-validation",
-    "version": "0.0.3",
+    "version": "0.0.4",
     "description": "",
     "main": "./index.ts",
     "types": "./index.d.ts",

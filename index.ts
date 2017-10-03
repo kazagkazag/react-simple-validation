@@ -1,5 +1,5 @@
 import {validate} from "./src/validate";
 
-export default {
+export {
     validate
 };

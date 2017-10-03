@@ -9,7 +9,7 @@ export function validate(properties: Property[]): <OriginalProps extends {}>(
     BaseComponent: React.ComponentClass<OriginalProps> | React.StatelessComponent<OriginalProps>
 ) => any;
 
-export interface PopertyWithValidation {
+export interface PropertyWithValidation {
     value: any;
     errors: string[];
     change: (value: any) => void;
