@@ -62,6 +62,8 @@ describe("validate", () => {
         expect(checker.props().testProp3[0].errors).toEqual([]);
         expect(typeof checker.props().testProp3[0].validate).toBe("function");
         expect(typeof checker.props().testProp3[0].cleanErrors).toBe("function");
+
+        expect(typeof checker.props().validator.validateAll).toBe("function");
     });
 
     test("should be able to change property", () => {
@@ -185,6 +187,54 @@ describe("validate", () => {
         expect(testComponentWithValidation.state().properties.testProp1.errors).toEqual([]);
     });
 
+    test("should be able to validate property based on another property value", () => {
+        const Checker = (props: any) => {
+            return (
+                <div>
+                    <input onChange={() => props.testProp1.change("Test")} />
+                    <button
+                        onClick={() => {
+                            props.testProp1.validate();
+                        }}
+                    >
+                        Test
+                    </button>
+                </div>
+            );
+        };
+
+        @validate([{
+            name: "testProp1",
+            value: "",
+            validators: [{
+                fn: (value: any, properties: any) => value === properties.testProp2.value,
+                error: "Validator error"
+            }],
+            error: "Some error"
+        }, {
+            name: "testProp2",
+            value: "Test",
+            validators: [{
+                fn: (value: any) => value.length > 0,
+                error: "Validator error"
+            }],
+            error: "Some error"
+        }])
+        class TestComponent extends React.Component<any, any> {
+            public render() {
+                return <Checker {...this.props} />;
+            }
+        }
+
+        const testComponentWithValidation = mount(<TestComponent/>);
+
+        testComponentWithValidation.find(Checker).find("input").simulate("change");
+        testComponentWithValidation.find(Checker).find("button").simulate("click");
+
+        expect(testComponentWithValidation.state().properties.testProp1.value).toBe("Test");
+        expect(testComponentWithValidation.state().properties.testProp1.errors).toEqual([]);
+    });
+
     test("should be able to validate item of property", () => {
         const Checker = (props: any) => {
             return (
@@ -270,6 +320,59 @@ describe("validate", () => {
         expect(testComponentWithValidation.state().properties.testProp1.errors).toEqual([
             "Validator error 1",
             "Validator error 2"
+        ]);
+    });
+
+    test("should be able to validate all properties", () => {
+        const Checker = (props: any) => {
+            return (
+                <div>
+                    <input onChange={() => {
+                        props.testProp1.change("");
+                        props.testProp2.change(2);
+                    }} />
+                    <button
+                        onClick={() => {
+                            props.validator.validateAll();
+                        }}
+                    >
+                        Test
+                    </button>
+                </div>
+            );
+        };
+
+        @validate([{
+            name: "testProp1",
+            value: "",
+            validators: [{
+                fn: (value: any) => value.length > 0,
+            }],
+            error: "Prop 1 error"
+        }, {
+            name: "testProp2",
+            value: 1,
+            validators: [{
+                fn: (value: any) => value.length > 3,
+            }],
+            error: "Prop 2 error"
+        }])
+        class TestComponent extends React.Component<any, any> {
+            public render() {
+                return <Checker {...this.props} />;
+            }
+        }
+
+        const testComponentWithValidation = mount(<TestComponent/>);
+
+        testComponentWithValidation.find(Checker).find("input").simulate("change");
+        testComponentWithValidation.find(Checker).find("button").simulate("click");
+
+        expect(testComponentWithValidation.state().properties.testProp1.errors).toEqual([
+            "Prop 1 error"
+        ]);
+        expect(testComponentWithValidation.state().properties.testProp2.errors).toEqual([
+            "Prop 2 error"
         ]);
     });
 

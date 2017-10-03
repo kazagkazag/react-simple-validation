@@ -3,7 +3,7 @@ import set = require("lodash.set");
 import get = require("lodash.get");
 
 interface Validator {
-    fn: (value: any) => boolean;
+    fn: (value: any, properties?: any) => boolean;
     error?: string;
 }
 
@@ -24,16 +24,8 @@ interface PropertyInState {
     fallbackError?: string;
 }
 
-export interface PropertyInChildrenProps {
-    value: any;
-    errors: string[];
-    change: (value: any) => void;
-    validate: () => void;
-    cleanErrors: () => void;
-}
-
 interface PropertiesInChildrenProps {
-    [key: string]: PropertyInChildrenProps | PropertyInChildrenProps[];
+    [key: string]: any;
 }
 
 interface PossibleProps {
@@ -66,7 +58,13 @@ export function validate(properties: Property[]) {
 
             public render() {
                 const validatedProperties = this.prepareValidatedPropertiesForChild();
-                return <BaseComponent {...this.props} {...validatedProperties} />;
+
+                return (
+                    <BaseComponent
+                        {...this.props}
+                        {...validatedProperties}
+                    />
+                );
             }
 
             private initializeValidatedProperties() {
@@ -120,6 +118,30 @@ export function validate(properties: Property[]) {
                             };
                     });
 
+                function validateAll() {
+                    function validateSingle(property: any) {
+                        property.validate();
+                    }
+
+                    function traverseProperties(validatedProperties: any) {
+                        Object
+                            .keys(validatedProperties)
+                            .forEach((propertyName: string) => {
+                                if (validatedProperties[propertyName].validate) {
+                                    validateSingle(validatedProperties[propertyName]);
+                                } else if (Array.isArray(validatedProperties[propertyName])) {
+                                    traverseProperties(validatedProperties[propertyName]);
+                                }
+                            });
+                    }
+
+                    traverseProperties(validationProperties);
+                }
+
+                validationProperties.validator = {
+                    validateAll
+                };
+
                 return validationProperties;
             }
 
@@ -149,7 +171,7 @@ export function validate(properties: Property[]) {
                     const errors: string[] = [];
 
                     property.validators.forEach((validator: Validator) => {
-                        if (!validator.fn(currentPropertyState.value)) {
+                        if (!validator.fn(currentPropertyState.value, this.state.properties)) {
                             errors.push(validator.error || currentPropertyState.fallbackError);
                         }
                     });
