@@ -138,12 +138,12 @@ export function validate(properties: Property[]) {
                     traverseProperties(validationProperties);
 
                     if (callback) {
-                        callback();
+                        this.forceUpdate(callback);
                     }
                 }
 
                 validationProperties.validator = {
-                    validateAll
+                    validateAll: validateAll.bind(this)
                 };
 
                 return validationProperties;
