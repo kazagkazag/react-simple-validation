@@ -118,7 +118,7 @@ export function validate(properties: Property[]) {
                             };
                     });
 
-                function validateAll() {
+                function validateAll(callback?: () => void) {
                     function validateSingle(property: any) {
                         property.validate();
                     }
@@ -136,6 +136,10 @@ export function validate(properties: Property[]) {
                     }
 
                     traverseProperties(validationProperties);
+
+                    if (callback) {
+                        callback();
+                    }
                 }
 
                 validationProperties.validator = {

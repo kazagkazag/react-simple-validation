@@ -1,13 +1,14 @@
 {
     "name": "react-simple-validation",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "description": "",
     "main": "./index.ts",
     "types": "./index.d.ts",
     "scripts": {
         "test": "jest ./src",
         "watch": "watch \"npm run lint && npm run test\" ./src",
-        "lint": "tslint './src/**/*.ts' './src/**/*.tsx'"
+        "lint": "tslint './src/**/*.ts' './src/**/*.tsx'",
+        "prepublish": "npm run lint -- --fix && npm run test"
     },
     "author": "kamil.zagrabski@gmail.com",
     "license": "ISC",
