@@ -7,7 +7,7 @@ interface Validator {
     error?: string;
 }
 
-export interface Property {
+interface Property {
     name: string;
     value: any;
     list?: boolean;
