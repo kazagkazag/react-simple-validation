@@ -9,11 +9,12 @@ interface Validator {
 
 interface Property {
     name: string;
-    value: any;
+    value?: any;
     list?: boolean;
     length?: number;
     validators: Validator[];
     error?: string;
+    external?: boolean;
 }
 
 interface PropertyInState {
@@ -22,6 +23,7 @@ interface PropertyInState {
     errors: string[];
     validators: Validator[];
     fallbackError?: string;
+    external: boolean;
 }
 
 interface PropertiesInChildrenProps {
@@ -39,6 +41,8 @@ interface WithValidationState {
 }
 
 export function validate(properties: Property[]) {
+    // todo: validate properties!
+    // example: do not allow to set external property with initial value
 
     return <OriginalProps extends PossibleProps>(BaseComponent: React.ComponentClass<OriginalProps> |
         React.StatelessComponent<OriginalProps>): any => {
@@ -79,20 +83,32 @@ export function validate(properties: Property[]) {
                             errors: [],
                             name: `${prop.name}[${index}]`,
                             validators: prop.validators,
-                            fallbackError: prop.error
+                            fallbackError: prop.error,
+                            external: false
                         } as PropertyInState))
                         : {
-                            value: prop.value,
+                            value: this.getInitialValue(prop),
                             errors: [],
                             name: prop.name,
                             validators: prop.validators,
-                            fallbackError: prop.error
+                            fallbackError: prop.error,
+                            external: prop.external
                         } as PropertyInState;
                 });
 
                 this.setState({
                     properties: validationProps
                 });
+            }
+
+            private getInitialValue(prop: Property) {
+                return prop.external
+                    ? this.getValueFromOriginalProps(prop.name)
+                    : prop.value;
+            }
+
+            private getValueFromOriginalProps(propName: string) {
+                return get(this.props, propName);
             }
 
             private prepareValidatedPropertiesForChild() {
@@ -110,7 +126,9 @@ export function validate(properties: Property[]) {
                                 validate: this.getValidator(propertyItem),
                                 cleanErrors: this.getErrorCleaner(propertyItem)
                             })) : {
-                                value: property.value,
+                                value: property.external
+                                    ? this.getValueFromOriginalProps(property.name)
+                                    : property.value,
                                 errors: property.errors,
                                 change: this.getChanger(property),
                                 validate: this.getValidator(property),

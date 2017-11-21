@@ -66,6 +66,42 @@ describe("validate", () => {
         expect(typeof checker.props().validator.validateAll).toBe("function");
     });
 
+    test("should handle value from external property", () => {
+        const Checker = (props: any) => {
+            return <h1>Checker</h1>;
+        };
+
+        @validate([{
+            external: true,
+            name: "testProp1",
+            validators: [{
+                fn: (value: any) => value === "some value",
+                error: "Some error"
+            }],
+            error: "Some error"
+        }])
+        class TestComponent extends React.Component<any, any> {
+            public render() {
+                return <Checker {...this.props} />;
+            }
+        }
+
+        class PropsProvider extends React.Component<any, any> {
+            public render() {
+                return <TestComponent testProp1="some value" />;
+            }
+        }
+
+        const propsProvider = mount(<PropsProvider/>);
+        const checker = propsProvider.find(Checker);
+
+        expect(checker.props().testProp1.value).toBe("some value");
+        expect(typeof checker.props().testProp1.change).toBe("function");
+        expect(checker.props().testProp1.errors).toEqual([]);
+        expect(typeof checker.props().testProp1.validate).toBe("function");
+        expect(typeof checker.props().testProp1.cleanErrors).toBe("function");
+    });
+
     test("should be able to change property", () => {
         const Checker = (props: any) => {
             return (
