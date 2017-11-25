@@ -66,13 +66,14 @@ describe("validate", () => {
         expect(typeof checker.props().validator.validateAll).toBe("function");
     });
 
-    test("should handle value from external property", () => {
+    test("should psas property value from external prop", () => {
         const Checker = (props: any) => {
             return <h1>Checker</h1>;
         };
 
         @validate([{
             external: true,
+            changeHandlerName: "change",
             name: "testProp1",
             validators: [{
                 fn: (value: any) => value === "some value",
@@ -82,13 +83,13 @@ describe("validate", () => {
         }])
         class TestComponent extends React.Component<any, any> {
             public render() {
-                return <Checker {...this.props} />;
+                return <Checker {...this.props}/>;
             }
         }
 
         class PropsProvider extends React.Component<any, any> {
             public render() {
-                return <TestComponent testProp1="some value" />;
+                return <TestComponent testProp1="some value" change={jest.fn()}/>;
             }
         }
 
@@ -144,6 +145,56 @@ describe("validate", () => {
 
         expect(testComponentWithValidation.state().properties.testProp1.value).toBe("Test new value");
         expect(testComponentWithValidation.state().properties.testProp2.value).toBe(true);
+    });
+
+    test("should be able to change property from external props calling external handler", () => {
+        const Checker = (props: any) => {
+            return (
+                <button
+                    onClick={() => {
+                        props.testProp1.change("Test new value");
+                    }}
+                >
+                    Test
+                </button>
+            );
+        };
+
+        @validate([{
+            external: true,
+            name: "testProp1",
+            changeHandlerName: "change",
+            validators: [{
+                fn: (value: any) => value === "some value",
+                error: "Some error"
+            }],
+            error: "Some error"
+        }])
+        class TestComponent extends React.Component<any, any> {
+            public render() {
+                return <Checker {...this.props} />;
+            }
+        }
+
+        const externalChanger = jest.fn();
+
+        class PropsProvider extends React.Component<any, any> {
+            public render() {
+                return (
+                    <TestComponent 
+                        testProp1="some value" 
+                        change={externalChanger}
+                    />
+                );
+            }
+        }
+
+        const propsProvider = mount(<PropsProvider/>);
+        const checker = propsProvider.find(Checker);
+
+        checker.find("button").simulate("click");
+
+        expect(externalChanger).toHaveBeenCalledWith("Test new value");
     });
 
     test("should be able to change value of item in property", () => {
