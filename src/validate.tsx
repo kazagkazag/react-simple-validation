@@ -15,7 +15,6 @@ export interface Property {
     validators: Validator[];
     error?: string;
     external?: boolean;
-    changeHandlerName?: string;
 }
 
 interface PropertyInState {
@@ -25,7 +24,6 @@ interface PropertyInState {
     validators: Validator[];
     fallbackError?: string;
     external: boolean;
-    changeHandlerName?: string;
 }
 
 interface PropertiesInChildrenProps {
@@ -94,8 +92,7 @@ export function validate(properties: Property[]) {
                             name: prop.name,
                             validators: prop.validators,
                             fallbackError: prop.error,
-                            external: prop.external,
-                            changeHandlerName: prop.changeHandlerName
+                            external: prop.external
                         } as PropertyInState;
                 });
 
@@ -187,24 +184,7 @@ export function validate(properties: Property[]) {
             }
 
             private getChanger(property: PropertyInState) {
-                return property.external
-                    ? this.getChangerForExternalProperty(property)
-                    : (newValue: any) => this.changePropertyValue(property.name, newValue);
-            }
-
-            private getChangerForExternalProperty(property: PropertyInState) {
-                const changer = get(this.props, property.changeHandlerName);
-
-                if (!changer || typeof changer !== "function") {
-                    throw Error(
-                        "Changer function for external property not found or it is not a function."
-                        + "If you want to use external properties, you should specify"
-                        + "name of the 'changeHandlerName' which should be a function and accept one"
-                        + "argument: value after change."
-                    );
-                } else {
-                    return (value: any) => changer(value);
-                }
+                return (newValue: any) => this.changePropertyValue(property.name, newValue);
             }
 
             private getValidator(property: Property) {

@@ -60,8 +60,7 @@ function validate(properties) {
                             name: prop.name,
                             validators: prop.validators,
                             fallbackError: prop.error,
-                            external: prop.external,
-                            changeHandlerName: prop.changeHandlerName
+                            external: prop.external
                         };
                 });
                 this.setState({
@@ -142,21 +141,7 @@ function validate(properties) {
             };
             WithValidation.prototype.getChanger = function (property) {
                 var _this = this;
-                return property.external
-                    ? this.getChangerForExternalProperty(property)
-                    : function (newValue) { return _this.changePropertyValue(property.name, newValue); };
-            };
-            WithValidation.prototype.getChangerForExternalProperty = function (property) {
-                var changer = get(this.props, property.changeHandlerName);
-                if (!changer || typeof changer !== "function") {
-                    throw Error("Changer function for external property not found or it is not a function."
-                        + "If you want to use external properties, you should specify"
-                        + "name of the 'changeHandlerName' which should be a function and accept one"
-                        + "argument: value after change.");
-                }
-                else {
-                    return function (value) { return changer(value); };
-                }
+                return function (newValue) { return _this.changePropertyValue(property.name, newValue); };
             };
             WithValidation.prototype.getValidator = function (property) {
                 var _this = this;

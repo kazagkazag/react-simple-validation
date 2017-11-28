@@ -147,56 +147,6 @@ describe("validate", () => {
         expect(testComponentWithValidation.state().properties.testProp2.value).toBe(true);
     });
 
-    test("should be able to change property from external props calling external handler", () => {
-        const Checker = (props: any) => {
-            return (
-                <button
-                    onClick={() => {
-                        props.testProp1.change("Test new value");
-                    }}
-                >
-                    Test
-                </button>
-            );
-        };
-
-        @validate([{
-            external: true,
-            name: "testProp1",
-            changeHandlerName: "change",
-            validators: [{
-                fn: (value: any) => value === "some value",
-                error: "Some error"
-            }],
-            error: "Some error"
-        }])
-        class TestComponent extends React.Component<any, any> {
-            public render() {
-                return <Checker {...this.props} />;
-            }
-        }
-
-        const externalChanger = jest.fn();
-
-        class PropsProvider extends React.Component<any, any> {
-            public render() {
-                return (
-                    <TestComponent
-                        testProp1="some value"
-                        change={externalChanger}
-                    />
-                );
-            }
-        }
-
-        const propsProvider = mount(<PropsProvider/>);
-        const checker = propsProvider.find(Checker);
-
-        checker.find("button").simulate("click");
-
-        expect(externalChanger).toHaveBeenCalledWith("Test new value");
-    });
-
     test("should be able to change value of item in property", () => {
         const Checker = (props: any) => {
             return (
