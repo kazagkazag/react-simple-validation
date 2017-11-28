@@ -274,6 +274,58 @@ describe("validate", () => {
         expect(testComponentWithValidation.state().properties.testProp1.errors).toEqual([]);
     });
 
+    test("should be able to validate external property", () => {
+        const Checker = (props: any) => {
+            return (
+                <div>
+                    <input onChange={() => props.testProp1.change("Test")} />
+                    <button
+                        onClick={() => {
+                            props.testProp1.validate();
+                        }}
+                    >
+                        Test
+                    </button>
+                    <p id="error">Error: {props.testProp1.errors}</p>
+                </div>
+            );
+        };
+
+        @validate([{
+            external: true,
+            changeHandlerName: "change",
+            name: "testProp1",
+            value: "",
+            validators: [{
+                fn: (value: any) => value.length > 10,
+                error: "Validator error"
+            }],
+            error: "Some error"
+        }])
+        class TestComponent extends React.Component<any, any> {
+            public render() {
+                return <Checker {...this.props} />;
+            }
+        }
+
+        class PropsProvider extends React.Component<any, any> {
+            public render() {
+                return (
+                    <TestComponent 
+                        testProp1="some value" 
+                        change={jest.fn()}
+                    />
+                );
+            }
+        }
+
+        const propsProvider = mount(<PropsProvider/>);
+
+        propsProvider.find(Checker).find("button").simulate("click");
+
+        expect(propsProvider.text()).toContain("Validator error");
+    });
+
     test("should be able to validate property based on another property value", () => {
         const Checker = (props: any) => {
             return (

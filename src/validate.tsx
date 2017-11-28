@@ -7,7 +7,7 @@ interface Validator {
     error?: string;
 }
 
-interface Property {
+export interface Property {
     name: string;
     value?: any;
     list?: boolean;
@@ -213,7 +213,10 @@ export function validate(properties: Property[]) {
                     const errors: string[] = [];
 
                     property.validators.forEach((validator: Validator) => {
-                        if (!validator.fn(currentPropertyState.value, this.state.properties)) {
+                        if (!validator.fn(
+                            this.getCurrentPropertyValue(currentPropertyState), 
+                            this.state.properties
+                        )) {
                             errors.push(validator.error || currentPropertyState.fallbackError);
                         }
                     });
@@ -230,6 +233,12 @@ export function validate(properties: Property[]) {
 
             private getErrorCleaner(property: Property) {
                 return this.cleanPropertyErrors.bind(this, property.name);
+            }
+
+            private getCurrentPropertyValue(property: PropertyInState) {
+                const propertyState: PropertyInState = get(this.state.properties, property.name);
+
+                return propertyState.value;
             }
         };
     };
