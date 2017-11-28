@@ -201,7 +201,7 @@ export function validate(properties: Property[]) {
                         + "If you want to use external properties, you should specify"
                         + "name of the 'changeHandlerName' which should be a function and accept one"
                         + "argument: value after change."
-                    )
+                    );
                 } else {
                     return (value: any) => changer(value);
                 }
@@ -214,7 +214,7 @@ export function validate(properties: Property[]) {
 
                     property.validators.forEach((validator: Validator) => {
                         if (!validator.fn(
-                            this.getCurrentPropertyValue(currentPropertyState), 
+                            this.getCurrentPropertyValue(currentPropertyState),
                             this.state.properties
                         )) {
                             errors.push(validator.error || currentPropertyState.fallbackError);

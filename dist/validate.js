@@ -22,6 +22,8 @@ var React = require("react");
 var set = require("lodash.set");
 var get = require("lodash.get");
 function validate(properties) {
+    // todo: validate properties!
+    // example: do not allow to set external property with initial value
     return function (BaseComponent) {
         return /** @class */ (function (_super) {
             __extends(WithValidation, _super);
@@ -40,6 +42,7 @@ function validate(properties) {
                 return (React.createElement(BaseComponent, __assign({}, this.props, validatedProperties)));
             };
             WithValidation.prototype.initializeValidatedProperties = function () {
+                var _this = this;
                 var validationProps = {};
                 properties.forEach(function (prop) {
                     validationProps[prop.name] = prop.list
@@ -48,19 +51,30 @@ function validate(properties) {
                             errors: [],
                             name: prop.name + "[" + index + "]",
                             validators: prop.validators,
-                            fallbackError: prop.error
+                            fallbackError: prop.error,
+                            external: false
                         }); })
                         : {
-                            value: prop.value,
+                            value: _this.getInitialValue(prop),
                             errors: [],
                             name: prop.name,
                             validators: prop.validators,
-                            fallbackError: prop.error
+                            fallbackError: prop.error,
+                            external: prop.external,
+                            changeHandlerName: prop.changeHandlerName
                         };
                 });
                 this.setState({
                     properties: validationProps
                 });
+            };
+            WithValidation.prototype.getInitialValue = function (prop) {
+                return prop.external
+                    ? this.getValueFromOriginalProps(prop.name)
+                    : prop.value;
+            };
+            WithValidation.prototype.getValueFromOriginalProps = function (propName) {
+                return get(this.props, propName);
             };
             WithValidation.prototype.prepareValidatedPropertiesForChild = function () {
                 var _this = this;
@@ -77,7 +91,9 @@ function validate(properties) {
                             validate: _this.getValidator(propertyItem),
                             cleanErrors: _this.getErrorCleaner(propertyItem)
                         }); }) : {
-                        value: property.value,
+                        value: property.external
+                            ? _this.getValueFromOriginalProps(property.name)
+                            : property.value,
                         errors: property.errors,
                         change: _this.getChanger(property),
                         validate: _this.getValidator(property),
@@ -126,7 +142,21 @@ function validate(properties) {
             };
             WithValidation.prototype.getChanger = function (property) {
                 var _this = this;
-                return function (newValue) { return _this.changePropertyValue(property.name, newValue); };
+                return property.external
+                    ? this.getChangerForExternalProperty(property)
+                    : function (newValue) { return _this.changePropertyValue(property.name, newValue); };
+            };
+            WithValidation.prototype.getChangerForExternalProperty = function (property) {
+                var changer = get(this.props, property.changeHandlerName);
+                if (!changer || typeof changer !== "function") {
+                    throw Error("Changer function for external property not found or it is not a function."
+                        + "If you want to use external properties, you should specify"
+                        + "name of the 'changeHandlerName' which should be a function and accept one"
+                        + "argument: value after change.");
+                }
+                else {
+                    return function (value) { return changer(value); };
+                }
             };
             WithValidation.prototype.getValidator = function (property) {
                 var _this = this;
@@ -134,7 +164,7 @@ function validate(properties) {
                     var currentPropertyState = get(_this.state.properties, property.name);
                     var errors = [];
                     property.validators.forEach(function (validator) {
-                        if (!validator.fn(currentPropertyState.value, _this.state.properties)) {
+                        if (!validator.fn(_this.getCurrentPropertyValue(currentPropertyState), _this.state.properties)) {
                             errors.push(validator.error || currentPropertyState.fallbackError);
                         }
                     });
@@ -149,6 +179,10 @@ function validate(properties) {
             };
             WithValidation.prototype.getErrorCleaner = function (property) {
                 return this.cleanPropertyErrors.bind(this, property.name);
+            };
+            WithValidation.prototype.getCurrentPropertyValue = function (property) {
+                var propertyState = get(this.state.properties, property.name);
+                return propertyState.value;
             };
             return WithValidation;
         }(React.Component));

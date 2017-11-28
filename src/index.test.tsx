@@ -181,8 +181,8 @@ describe("validate", () => {
         class PropsProvider extends React.Component<any, any> {
             public render() {
                 return (
-                    <TestComponent 
-                        testProp1="some value" 
+                    <TestComponent
+                        testProp1="some value"
                         change={externalChanger}
                     />
                 );
@@ -311,8 +311,8 @@ describe("validate", () => {
         class PropsProvider extends React.Component<any, any> {
             public render() {
                 return (
-                    <TestComponent 
-                        testProp1="some value" 
+                    <TestComponent
+                        testProp1="some value"
                         change={jest.fn()}
                     />
                 );
