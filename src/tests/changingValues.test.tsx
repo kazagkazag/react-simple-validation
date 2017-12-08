@@ -6,7 +6,7 @@ import {validate} from "../validate";
 /* tslint:disable max-classes-per-file */
 describe("validate", () => {
 
-    test("should be able to change property", () => {
+    test("should change property", () => {
         const Checker = (props: any) => {
             return (
                 <button
@@ -50,7 +50,7 @@ describe("validate", () => {
         expect(testComponentWithValidation.state().properties.testProp2.value).toBe(true);
     });
 
-    test("should be able to change property initialized from external props", () => {
+    test("should change property initialized from external props", () => {
         const Checker = (props: any) => {
             return (
                 <button
@@ -85,7 +85,7 @@ describe("validate", () => {
         expect(testComponentWithValidation.state().properties.testProp1.value).toBe("Test new value");
     });
 
-    test("should be able to change value of item in property", () => {
+    test("should change value of item in property", () => {
         const Checker = (props: any) => {
             return (
                 <button

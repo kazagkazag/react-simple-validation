@@ -66,7 +66,7 @@ describe("validate", () => {
         expect(typeof checker.props().validator.validateAll).toBe("function");
     });
 
-    test("should pass property value from external prop", () => {
+    test("should expose property value for value from external prop", () => {
         const Checker = (props: any) => {
             return <h1>Checker</h1>;
         };
@@ -102,7 +102,7 @@ describe("validate", () => {
         expect(typeof checker.props().testProp1.cleanErrors).toBe("function");
     });
 
-    test("should initialize property value from external prop", () => {
+    test("should expose property value for value initialized from external prop", () => {
         const Checker = (props: any) => {
             return <h1>Checker</h1>;
         };
