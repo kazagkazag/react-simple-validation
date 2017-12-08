@@ -10,6 +10,7 @@ interface Validator {
 export interface Property {
     name: string;
     value?: any;
+    initialValueFromProps?: boolean;
     list?: boolean;
     length?: number;
     validators: Validator[];
@@ -102,7 +103,7 @@ export function validate(properties: Property[]) {
             }
 
             private getInitialValue(prop: Property) {
-                return prop.external
+                return prop.external || prop.initialValueFromProps
                     ? this.getValueFromOriginalProps(prop.name)
                     : prop.value;
             }

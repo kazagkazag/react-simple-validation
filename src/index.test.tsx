@@ -66,14 +66,49 @@ describe("validate", () => {
         expect(typeof checker.props().validator.validateAll).toBe("function");
     });
 
-    test("should psas property value from external prop", () => {
+    test("should pass property value from external prop", () => {
         const Checker = (props: any) => {
             return <h1>Checker</h1>;
         };
 
         @validate([{
             external: true,
-            changeHandlerName: "change",
+            name: "testProp1",
+            validators: [{
+                fn: (value: any) => value === "some value",
+                error: "Some error"
+            }],
+            error: "Some error"
+        }])
+        class TestComponent extends React.Component<any, any> {
+            public render() {
+                return <Checker {...this.props}/>;
+            }
+        }
+
+        class PropsProvider extends React.Component<any, any> {
+            public render() {
+                return <TestComponent testProp1="some value" change={jest.fn()}/>;
+            }
+        }
+
+        const propsProvider = mount(<PropsProvider/>);
+        const checker = propsProvider.find(Checker);
+
+        expect(checker.props().testProp1.value).toBe("some value");
+        expect(typeof checker.props().testProp1.change).toBe("function");
+        expect(checker.props().testProp1.errors).toEqual([]);
+        expect(typeof checker.props().testProp1.validate).toBe("function");
+        expect(typeof checker.props().testProp1.cleanErrors).toBe("function");
+    });
+
+    test("should initialize property value from external prop", () => {
+        const Checker = (props: any) => {
+            return <h1>Checker</h1>;
+        };
+
+        @validate([{
+            initialValueFromProps: true,
             name: "testProp1",
             validators: [{
                 fn: (value: any) => value === "some value",
@@ -145,6 +180,41 @@ describe("validate", () => {
 
         expect(testComponentWithValidation.state().properties.testProp1.value).toBe("Test new value");
         expect(testComponentWithValidation.state().properties.testProp2.value).toBe(true);
+    });
+
+    test("should be able to change property initialized from external props", () => {
+        const Checker = (props: any) => {
+            return (
+                <button
+                    onClick={() => {
+                        props.testProp1.change("Test new value");
+                    }}
+                >
+                    Test
+                </button>
+            );
+        };
+
+        @validate([{
+            name: "testProp1",
+            initialValueFromProps: true,
+            validators: [{
+                fn: (value: any) => !!value,
+                error: "Some error"
+            }],
+            error: "Some error"
+        }])
+        class TestComponent extends React.Component<any, any> {
+            public render() {
+                return <Checker {...this.props} />;
+            }
+        }
+
+        const testComponentWithValidation = mount(<TestComponent/>);
+
+        testComponentWithValidation.find(Checker).find("button").simulate("click");
+
+        expect(testComponentWithValidation.state().properties.testProp1.value).toBe("Test new value");
     });
 
     test("should be able to change value of item in property", () => {
@@ -228,7 +298,6 @@ describe("validate", () => {
         const Checker = (props: any) => {
             return (
                 <div>
-                    <input onChange={() => props.testProp1.change("Test")} />
                     <button
                         onClick={() => {
                             props.testProp1.validate();
@@ -243,7 +312,6 @@ describe("validate", () => {
 
         @validate([{
             external: true,
-            changeHandlerName: "change",
             name: "testProp1",
             value: "",
             validators: [{
@@ -263,6 +331,55 @@ describe("validate", () => {
                 return (
                     <TestComponent
                         testProp1="some value"
+                        change={jest.fn()}
+                    />
+                );
+            }
+        }
+
+        const propsProvider = mount(<PropsProvider/>);
+
+        propsProvider.find(Checker).find("button").simulate("click");
+
+        expect(propsProvider.text()).toContain("Validator error");
+    });
+
+    test("should be able to validate property initialized from external props", () => {
+        const Checker = (props: any) => {
+            return (
+                <div>
+                    <button
+                        onClick={() => {
+                            props.testProp1.validate();
+                        }}
+                    >
+                        Test
+                    </button>
+                    <p id="error">Error: {props.testProp1.errors}</p>
+                </div>
+            );
+        };
+
+        @validate([{
+            initialValueFromProps: true,
+            name: "testProp1",
+            validators: [{
+                fn: (value: any) => value.length < 10,
+                error: "Validator error"
+            }],
+            error: "Some error"
+        }])
+        class TestComponent extends React.Component<any, any> {
+            public render() {
+                return <Checker {...this.props} />;
+            }
+        }
+
+        class PropsProvider extends React.Component<any, any> {
+            public render() {
+                return (
+                    <TestComponent
+                        testProp1="some very long value"
                         change={jest.fn()}
                     />
                 );
