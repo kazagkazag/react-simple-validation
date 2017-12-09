@@ -21,25 +21,27 @@ is simplified, so there is no unrelated properties and elements (like `name` or
 
 ```typescript
 // all other imports ...
-
+// import HOC and Property interface:
 import {validate, PropertyWithValidation} from "react-simple-validation";
 
+// define interface for all properties and global validator:
 interface NewsletterFormProps {
     email: PropertyWithValidation;
     agreement: PropertyWithValidation;
     validator: any;
 }
 
+// use HOC as decorator
 @validate([{
-    name: "email",
-    value: "",
-    validators: [{
-        fn: (value: any) => !!value.trim(),
-        error: "Email is empty."
+    name: "email", // proprety name, it will be exposed in props
+    value: "", // initial value
+    validators: [{ // list of validators...
+        fn: (value: any) => !!value.trim(), // validator, if return false - field is invalid
+        error: "Email is empty." // error message for that specific validator
     }, {
         fn: (value: any) => value.indexOf("@") >= 0
     }],
-    error: "Fallback error for validator without own error."
+    error: "Fallback error for validator without own error." // error message used if validator hasn't own error message defined
 }, {
     name: "agreement",
     value: false,
@@ -48,38 +50,44 @@ interface NewsletterFormProps {
         error: "Agreement is required."
     }]
 }])
-const NewsletterForm: React.SFC<NewsletterFormProps> = (props: NewsletterFormProps) => {
-    return (
-        <form 
-            onSumbit={() => {
-                props.validator.validateAll(() => {
-                    // all properties validated
-                    // we can read errors from props and proceed
-                });
-            }}
-        >
-            <input
-                type="text"
-                value={props.email.value}
-                onChange={(e) => props.email.change(e.target.value)}
-                onFocus={props.email.clearErrors}
-            />
-            <p>{props.email.errors}</p>
-
-            <input
-                type="checkbox"
-                value={props.agreement.value}
-                onChange={() => {
-                    props.agreement.change(!props.agreement.value)
+class NewsletterForm extends React.Component<NewsletterFormProps, any> {
+    public render() {
+        return (
+            <form 
+                onSumbit={() => {
+                    props.validator.validateAll(() => {
+                        // all properties validated
+                        // we can read errors from props and proceed
+                    });
                 }}
-                onFocus={props.agreement.clearErrors}
-            />
-            I agree!
-            <p>{props.agreement.errors}</p>
+            >
+                // every property defined in @validate() will be exposed
+                // in component props, so we have access
+                // to it's current value, list of errors and methods
+                // for changing value and clear all errors
+                <input
+                    type="text"
+                    value={props.email.value}
+                    onChange={(e) => props.email.change(e.target.value)}
+                    onFocus={props.email.clearErrors}
+                />
+                <p>{props.email.errors}</p>
 
-            <button type="sumbit">Sign in</button>
-        </form>
-    )
+                <input
+                    type="checkbox"
+                    value={props.agreement.value}
+                    onChange={() => {
+                        props.agreement.change(!props.agreement.value)
+                    }}
+                    onFocus={props.agreement.clearErrors}
+                />
+                I agree!
+                <p>{props.agreement.errors}</p>
+
+                <button type="sumbit">Sign in</button>
+            </form>
+        )
+    }
 }
 ```
 
