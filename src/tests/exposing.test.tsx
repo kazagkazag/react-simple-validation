@@ -1,16 +1,12 @@
 import "jest";
 import * as React from "react";
-import {mount} from "enzyme";
+import {Checker, mountTestComponent} from "./utils";
 import {validate} from "../validate";
 
 /* tslint:disable max-classes-per-file */
 describe("validate", () => {
     test("should expose info about every validated property", () => {
-        const Checker = (props: any) => {
-            return <h1>Checker</h1>;
-        };
-
-        @validate([{
+        const testComponentWithValidation = mountTestComponent([{
             name: "testProp1",
             value: "",
             validators: [{
@@ -34,14 +30,8 @@ describe("validate", () => {
                 fn: (value: any) => !!value,
                 error: "Some error"
             }]
-        }])
-        class TestComponent extends React.Component<any, any> {
-            public render() {
-                return <Checker {...this.props} />;
-            }
-        }
+        }]);
 
-        const testComponentWithValidation = mount(<TestComponent/>);
         const checker = testComponentWithValidation.find(Checker);
 
         expect(checker.props().testProp1.value).toBe("");
@@ -67,11 +57,7 @@ describe("validate", () => {
     });
 
     test("should expose property value for value from external prop", () => {
-        const Checker = (props: any) => {
-            return <h1>Checker</h1>;
-        };
-
-        @validate([{
+        const propsProvider = mountTestComponent([{
             external: true,
             name: "testProp1",
             validators: [{
@@ -79,20 +65,10 @@ describe("validate", () => {
                 error: "Some error"
             }],
             error: "Some error"
-        }])
-        class TestComponent extends React.Component<any, any> {
-            public render() {
-                return <Checker {...this.props}/>;
-            }
-        }
+        }], {
+            testProp1:"some value"
+        });
 
-        class PropsProvider extends React.Component<any, any> {
-            public render() {
-                return <TestComponent testProp1="some value" change={jest.fn()}/>;
-            }
-        }
-
-        const propsProvider = mount(<PropsProvider/>);
         const checker = propsProvider.find(Checker);
 
         expect(checker.props().testProp1.value).toBe("some value");
@@ -103,11 +79,7 @@ describe("validate", () => {
     });
 
     test("should expose property value for value initialized from external prop", () => {
-        const Checker = (props: any) => {
-            return <h1>Checker</h1>;
-        };
-
-        @validate([{
+        const propsProvider = mountTestComponent([{
             initialValueFromProps: true,
             name: "testProp1",
             validators: [{
@@ -115,20 +87,9 @@ describe("validate", () => {
                 error: "Some error"
             }],
             error: "Some error"
-        }])
-        class TestComponent extends React.Component<any, any> {
-            public render() {
-                return <Checker {...this.props}/>;
-            }
-        }
-
-        class PropsProvider extends React.Component<any, any> {
-            public render() {
-                return <TestComponent testProp1="some value" change={jest.fn()}/>;
-            }
-        }
-
-        const propsProvider = mount(<PropsProvider/>);
+        }], {
+            testProp1: "some value"
+        });
         const checker = propsProvider.find(Checker);
 
         expect(checker.props().testProp1.value).toBe("some value");
@@ -137,6 +98,5 @@ describe("validate", () => {
         expect(typeof checker.props().testProp1.validate).toBe("function");
         expect(typeof checker.props().testProp1.cleanErrors).toBe("function");
     });
-
 });
 /* tslint:enable max-classes-per-file */
