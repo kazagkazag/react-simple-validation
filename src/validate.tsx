@@ -194,7 +194,20 @@ export function validate(properties: Property[]) {
 
             private getValidator(property: Property) {
                 return () => {
-                    const currentPropertyState: PropertyInState = get(this.state.properties, property.name);
+                    let currentPropertyState: PropertyInState;
+                    // try to get property by name from state
+                    // if there is property with dot in the name
+                    // then it should be found
+                    // if not found, try to get property by path, using lodash
+                    // if there is path to property, then try {} will fail
+                    // and property will be obtained by lodash
+                    try {
+                        currentPropertyState = this.state.properties[property.name] !== undefined
+                            ? this.state.properties[property.name]
+                            : get(this.state.properties, property.name);
+                    } catch (e) {
+                        currentPropertyState = get(this.state.properties, property.name);
+                    }
                     const errors: string[] = [];
 
                     property.validators.forEach((validator: Validator) => {
@@ -214,7 +227,6 @@ export function validate(properties: Property[]) {
                             } catch (e) {
                                 set(newState.properties, `${property.name}.errors`, errors);
                             }
-                            set(newState.properties, `${property.name}.errors`, errors);
                             return newState;
                         });
                     }
@@ -226,9 +238,11 @@ export function validate(properties: Property[]) {
             }
 
             private getCurrentPropertyValue(property: PropertyInState) {
-                const propertyState: PropertyInState = get(this.state.properties, property.name);
-
-                return propertyState.value;
+                try {
+                    return this.state.properties[property.name].value;
+                } catch (e) {
+                    return (get(this.state.properties, property.name) as PropertyInState).value;
+                }
             }
         };
     };

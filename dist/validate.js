@@ -153,7 +153,21 @@ function validate(properties) {
             WithValidation.prototype.getValidator = function (property) {
                 var _this = this;
                 return function () {
-                    var currentPropertyState = get(_this.state.properties, property.name);
+                    var currentPropertyState;
+                    // try to get property by name from state
+                    // if there is property with dot in the name
+                    // then it should be found
+                    // if not found, try to get property by path, using lodash
+                    // if there is path to property, then try {} will fail
+                    // and property will be obtained by lodash
+                    try {
+                        currentPropertyState = _this.state.properties[property.name] !== undefined
+                            ? _this.state.properties[property.name]
+                            : get(_this.state.properties, property.name);
+                    }
+                    catch (e) {
+                        currentPropertyState = get(_this.state.properties, property.name);
+                    }
                     var errors = [];
                     property.validators.forEach(function (validator) {
                         if (!validator.fn(_this.getCurrentPropertyValue(currentPropertyState), _this.state.properties)) {
@@ -179,8 +193,12 @@ function validate(properties) {
                 return this.cleanPropertyErrors.bind(this, property.name);
             };
             WithValidation.prototype.getCurrentPropertyValue = function (property) {
-                var propertyState = get(this.state.properties, property.name);
-                return propertyState.value;
+                try {
+                    return this.state.properties[property.name].value;
+                }
+                catch (e) {
+                    return get(this.state.properties, property.name).value;
+                }
             };
             return WithValidation;
         }(React.Component));
