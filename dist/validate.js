@@ -68,7 +68,7 @@ function validate(properties) {
                 });
             };
             WithValidation.prototype.getInitialValue = function (prop) {
-                return prop.external
+                return prop.external || prop.initialValueFromProps
                     ? this.getValueFromOriginalProps(prop.name)
                     : prop.value;
             };

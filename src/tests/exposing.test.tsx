@@ -66,7 +66,7 @@ describe("validate", () => {
             }],
             error: "Some error"
         }], {
-            testProp1:"some value"
+            testProp1: "some value"
         });
 
         const checker = propsProvider.find(Checker);

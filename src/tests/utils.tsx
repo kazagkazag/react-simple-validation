@@ -2,14 +2,28 @@ import * as React from "react";
 import { mount } from "enzyme";
 import { validate } from "../validate";
 
+/* tslint:disable max-classes-per-file */
 export const Checker = (props: any) => {
     return (
         <div>
             <button
                 onClick={() => {
-                    props && props.testProp1 && props.testProp1.change("Test new value");
-                    props && props.testProp2 && props.testProp2.change(true);
-                    props && props.testProp3 && props.testProp3[0].change("Test new value");
+                    if (!props) {
+                        return;
+
+                    }
+
+                    if (props.testProp1) {
+                        props.testProp1.change("Test new value");
+                    }
+
+                    if (props.testProp2) {
+                        props.testProp2.change(true);
+                    }
+
+                    if (props.testProp3) {
+                        props.testProp3[0].change("Test new value");
+                    }
                 }}
             >
                 Test
@@ -37,3 +51,4 @@ export function mountTestComponent(config: any, parentProps: any = {}) {
 
     return mount(<PropsProvider />);
 }
+/* tslint:enable max-classes-per-file */
