@@ -56,28 +56,6 @@ describe("validate", () => {
         expect(typeof checker.props().validator.validateAll).toBe("function");
     });
 
-    test("should expose property value for value from external prop", () => {
-        const propsProvider = mountTestComponent([{
-            external: true,
-            name: "testProp1",
-            validators: [{
-                fn: (value: any) => value === "some value",
-                error: "Some error"
-            }],
-            error: "Some error"
-        }], {
-            testProp1: "some value"
-        });
-
-        const checker = propsProvider.find(Checker);
-
-        expect(checker.props().testProp1.value).toBe("some value");
-        expect(typeof checker.props().testProp1.change).toBe("function");
-        expect(checker.props().testProp1.errors).toEqual([]);
-        expect(typeof checker.props().testProp1.validate).toBe("function");
-        expect(typeof checker.props().testProp1.cleanErrors).toBe("function");
-    });
-
     test("should expose property value for value initialized from external prop", () => {
         const propsProvider = mountTestComponent([{
             initialValueFromProps: true,

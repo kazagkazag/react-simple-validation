@@ -59,8 +59,7 @@ function validate(properties) {
                             errors: [],
                             name: prop.name,
                             validators: prop.validators,
-                            fallbackError: prop.error,
-                            external: prop.external
+                            fallbackError: prop.error
                         };
                 });
                 this.setState({
@@ -68,7 +67,7 @@ function validate(properties) {
                 });
             };
             WithValidation.prototype.getInitialValue = function (prop) {
-                return prop.external || prop.initialValueFromProps
+                return prop.initialValueFromProps
                     ? this.getValueFromOriginalProps(prop.name)
                     : prop.value;
             };
@@ -90,9 +89,7 @@ function validate(properties) {
                             validate: _this.getValidator(propertyItem),
                             cleanErrors: _this.getErrorCleaner(propertyItem)
                         }); }) : {
-                        value: property.external
-                            ? _this.getValueFromOriginalProps(property.name)
-                            : property.value,
+                        value: property.value,
                         errors: property.errors,
                         change: _this.getChanger(property),
                         validate: _this.getValidator(property),
@@ -128,14 +125,24 @@ function validate(properties) {
             WithValidation.prototype.changePropertyValue = function (propertyPath, newValue) {
                 this.setState(function (prevState) {
                     var newState = __assign({}, prevState);
-                    set(newState.properties, propertyPath + ".value", newValue);
+                    try {
+                        newState.properties[propertyPath].value = newValue;
+                    }
+                    catch (e) {
+                        set(newState.properties, propertyPath + ".value", newValue);
+                    }
                     return newState;
                 });
             };
             WithValidation.prototype.cleanPropertyErrors = function (propertyPath) {
                 this.setState(function (prevState) {
                     var newState = __assign({}, prevState);
-                    set(newState.properties, propertyPath + ".errors", []);
+                    try {
+                        newState.properties[propertyPath].errors = [];
+                    }
+                    catch (e) {
+                        set(newState.properties, propertyPath + ".errors", []);
+                    }
                     return newState;
                 });
             };
@@ -156,6 +163,12 @@ function validate(properties) {
                     if (errors.length) {
                         _this.setState(function (prevState) {
                             var newState = __assign({}, prevState);
+                            try {
+                                newState.properties[property.name].errors = errors;
+                            }
+                            catch (e) {
+                                set(newState.properties, property.name + ".errors", errors);
+                            }
                             set(newState.properties, property.name + ".errors", errors);
                             return newState;
                         });

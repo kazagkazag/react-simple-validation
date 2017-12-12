@@ -15,7 +15,6 @@ export interface Property {
     length?: number;
     validators: Validator[];
     error?: string;
-    external?: boolean;
 }
 
 interface PropertyInState {
@@ -92,8 +91,7 @@ export function validate(properties: Property[]) {
                             errors: [],
                             name: prop.name,
                             validators: prop.validators,
-                            fallbackError: prop.error,
-                            external: prop.external
+                            fallbackError: prop.error
                         } as PropertyInState;
                 });
 
@@ -103,7 +101,7 @@ export function validate(properties: Property[]) {
             }
 
             private getInitialValue(prop: Property) {
-                return prop.external || prop.initialValueFromProps
+                return prop.initialValueFromProps
                     ? this.getValueFromOriginalProps(prop.name)
                     : prop.value;
             }
@@ -127,9 +125,7 @@ export function validate(properties: Property[]) {
                                 validate: this.getValidator(propertyItem),
                                 cleanErrors: this.getErrorCleaner(propertyItem)
                             })) : {
-                                value: property.external
-                                    ? this.getValueFromOriginalProps(property.name)
-                                    : property.value,
+                                value: property.value,
                                 errors: property.errors,
                                 change: this.getChanger(property),
                                 validate: this.getValidator(property),
@@ -171,7 +167,11 @@ export function validate(properties: Property[]) {
             private changePropertyValue(propertyPath: string, newValue: any) {
                 this.setState((prevState: any) => {
                     const newState = { ...prevState };
-                    set(newState.properties, `${propertyPath}.value`, newValue);
+                    try {
+                        newState.properties[propertyPath].value = newValue;
+                    } catch (e) {
+                        set(newState.properties, `${propertyPath}.value`, newValue);
+                    }
                     return newState;
                 });
             }
@@ -179,7 +179,11 @@ export function validate(properties: Property[]) {
             private cleanPropertyErrors(propertyPath: string) {
                 this.setState((prevState: any) => {
                     const newState = { ...prevState };
-                    set(newState.properties, `${propertyPath}.errors`, []);
+                    try {
+                        newState.properties[propertyPath].errors = [];
+                    } catch (e) {
+                        set(newState.properties, `${propertyPath}.errors`, []);
+                    }
                     return newState;
                 });
             }
@@ -205,6 +209,11 @@ export function validate(properties: Property[]) {
                     if (errors.length) {
                         this.setState((prevState: any) => {
                             const newState = { ...prevState };
+                            try {
+                                newState.properties[property.name].errors = errors;
+                            } catch (e) {
+                                set(newState.properties, `${property.name}.errors`, errors);
+                            }
                             set(newState.properties, `${property.name}.errors`, errors);
                             return newState;
                         });

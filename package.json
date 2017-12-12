@@ -1,6 +1,6 @@
 {
     "name": "react-simple-validation",
-    "version": "0.2.2",
+    "version": "0.2.3",
     "description": "",
     "main": "./dist/index.js",
     "types": "./index.d.ts",
@@ -11,7 +11,7 @@
         "prepublish": "npm run build",
         "clean-dist": "npm run remove-dist && mkdir dist",
         "remove-dist": "rimraf ./dist",
-        "prebuild": "npm run clean-dist && npm run lint && npm run test",
+        "prebuild": "npm run clean-dist && npm run lint -- --fix && npm run test",
         "build": "tsc --project tsconfig.json"
     },
     "author": "kamil.zagrabski@gmail.com",
