@@ -7,10 +7,12 @@ interface Validator {
     error?: string;
 }
 
+type PropsGetter = (props: any) => any;
+
 export interface Property {
     name: string;
     value?: any;
-    initialValueFromProps?: boolean;
+    initialValueFromProps?: boolean | PropsGetter;
     list?: boolean;
     length?: number;
     validators: Validator[];
@@ -39,7 +41,10 @@ interface PropertyInChildrenProps {
 }
 
 interface PropertiesInChildrenProps {
-    [key: string]: FormValidator | PropertyInChildrenProps | PropertyInChildrenProps[];
+    [key: string]:
+        | FormValidator
+        | PropertyInChildrenProps
+        | PropertyInChildrenProps[];
 }
 
 interface PossibleProps {
@@ -56,10 +61,15 @@ export function validate(properties: Property[]) {
     // todo: validate properties!
     // example: do not allow to set external property with initial value
 
-    return <OriginalProps extends PossibleProps>(BaseComponent: React.ComponentClass<OriginalProps> |
-        React.StatelessComponent<OriginalProps>): any => {
-
-        return class WithValidation extends React.Component<OriginalProps, WithValidationState> {
+    return <OriginalProps extends PossibleProps>(
+        BaseComponent:
+            | React.ComponentClass<OriginalProps>
+            | React.StatelessComponent<OriginalProps>
+    ): any => {
+        return class WithValidation extends React.Component<
+            OriginalProps,
+            WithValidationState
+        > {
             constructor(props: any) {
                 super(props);
 
@@ -76,35 +86,37 @@ export function validate(properties: Property[]) {
                 const validatedProperties = this.prepareValidatedPropertiesForChild();
 
                 return (
-                    <BaseComponent
-                        {...this.props}
-                        {...validatedProperties}
-                    />
+                    <BaseComponent {...this.props} {...validatedProperties} />
                 );
             }
 
             private initializeValidatedProperties() {
                 const validationProps = {} as {
-                    [key: string]: PropertyInChildrenProps | PropertyInChildrenProps[];
+                    [key: string]:
+                        | PropertyInChildrenProps
+                        | PropertyInChildrenProps[];
                 };
 
                 properties.forEach((prop: Property) => {
                     validationProps[prop.name] = prop.list
-                        ? Array.apply(null, Array(prop.length)).map((x: any, index: number) => ({
-                            value: prop.value,
-                            errors: [],
-                            name: `${prop.name}[${index}]`,
-                            validators: prop.validators,
-                            fallbackError: prop.error,
-                            external: false
-                        } as PropertyInState))
-                        : {
-                            value: this.getInitialValue(prop),
-                            errors: [],
-                            name: prop.name,
-                            validators: prop.validators,
-                            fallbackError: prop.error
-                        } as PropertyInState;
+                        ? Array.apply(null, Array(prop.length)).map(
+                              (x: any, index: number) =>
+                                  ({
+                                      value: prop.value,
+                                      errors: [],
+                                      name: `${prop.name}[${index}]`,
+                                      validators: prop.validators,
+                                      fallbackError: prop.error,
+                                      external: false
+                                  } as PropertyInState)
+                          )
+                        : ({
+                              value: this.getInitialValue(prop),
+                              errors: [],
+                              name: prop.name,
+                              validators: prop.validators,
+                              fallbackError: prop.error
+                          } as PropertyInState);
                 });
 
                 this.setState({
@@ -113,37 +125,60 @@ export function validate(properties: Property[]) {
             }
 
             private getInitialValue(prop: Property) {
-                return prop.initialValueFromProps
-                    ? this.getValueFromOriginalProps(prop.name)
-                    : prop.value;
+                const getInitialValueFromPropsBasedOnName =
+                    prop.initialValueFromProps === true;
+
+                if (getInitialValueFromPropsBasedOnName) {
+                    return this.getValueFromOriginalPropsByName(prop.name);
+                }
+
+                const getInitialValueFromPropsUsingFunction =
+                    typeof prop.initialValueFromProps === "function";
+
+                if (getInitialValueFromPropsUsingFunction) {
+                    return this.getValueFromOriginalPropsUsingFn(
+                        prop.initialValueFromProps as PropsGetter
+                    );
+                }
+
+                return prop.value;
             }
 
-            private getValueFromOriginalProps(propName: string) {
+            private getValueFromOriginalPropsByName(propName: string) {
                 return get(this.props, propName);
+            }
+
+            private getValueFromOriginalPropsUsingFn(getter: PropsGetter): any {
+                return getter(this.props);
             }
 
             private prepareValidatedPropertiesForChild() {
                 const validationProperties: PropertiesInChildrenProps = {};
 
-                Object
-                    .keys(this.state.properties)
-                    .forEach((propertyName: string) => {
+                Object.keys(this.state.properties).forEach(
+                    (propertyName: string) => {
                         const property = this.state.properties[propertyName];
-                        validationProperties[propertyName] = Array.isArray(property)
+                        validationProperties[propertyName] = Array.isArray(
+                            property
+                        )
                             ? property.map((propertyItem: any) => ({
-                                value: propertyItem.value,
-                                errors: propertyItem.errors,
-                                change: this.getChanger(propertyItem),
-                                validate: this.getValidator(propertyItem),
-                                cleanErrors: this.getErrorCleaner(propertyItem)
-                            })) : {
-                                value: property.value,
-                                errors: property.errors,
-                                change: this.getChanger(property),
-                                validate: this.getValidator(property),
-                                cleanErrors: this.getErrorCleaner(property)
-                            };
-                    });
+                                  value: propertyItem.value,
+                                  errors: propertyItem.errors,
+                                  change: this.getChanger(propertyItem),
+                                  validate: this.getValidator(propertyItem),
+                                  cleanErrors: this.getErrorCleaner(
+                                      propertyItem
+                                  )
+                              }))
+                            : {
+                                  value: property.value,
+                                  errors: property.errors,
+                                  change: this.getChanger(property),
+                                  validate: this.getValidator(property),
+                                  cleanErrors: this.getErrorCleaner(property)
+                              };
+                    }
+                );
 
                 function validateAll(callback?: () => void) {
                     function validateSingle(property: any) {
@@ -151,15 +186,25 @@ export function validate(properties: Property[]) {
                     }
 
                     function traverseProperties(validatedProperties: any) {
-                        Object
-                            .keys(validatedProperties)
-                            .forEach((propertyName: string) => {
-                                if (validatedProperties[propertyName].validate) {
-                                    validateSingle(validatedProperties[propertyName]);
-                                } else if (Array.isArray(validatedProperties[propertyName])) {
-                                    traverseProperties(validatedProperties[propertyName]);
+                        Object.keys(validatedProperties).forEach(
+                            (propertyName: string) => {
+                                if (
+                                    validatedProperties[propertyName].validate
+                                ) {
+                                    validateSingle(
+                                        validatedProperties[propertyName]
+                                    );
+                                } else if (
+                                    Array.isArray(
+                                        validatedProperties[propertyName]
+                                    )
+                                ) {
+                                    traverseProperties(
+                                        validatedProperties[propertyName]
+                                    );
                                 }
-                            });
+                            }
+                        );
                     }
 
                     traverseProperties(validationProperties);
@@ -182,7 +227,11 @@ export function validate(properties: Property[]) {
                     try {
                         newState.properties[propertyPath].value = newValue;
                     } catch (e) {
-                        set(newState.properties, `${propertyPath}.value`, newValue);
+                        set(
+                            newState.properties,
+                            `${propertyPath}.value`,
+                            newValue
+                        );
                     }
                     return newState;
                 });
@@ -201,7 +250,8 @@ export function validate(properties: Property[]) {
             }
 
             private getChanger(property: PropertyInState) {
-                return (newValue: any) => this.changePropertyValue(property.name, newValue);
+                return (newValue: any) =>
+                    this.changePropertyValue(property.name, newValue);
             }
 
             private getValidator(property: Property) {
@@ -214,20 +264,31 @@ export function validate(properties: Property[]) {
                     // if there is path to property, then try {} will fail
                     // and property will be obtained by lodash
                     try {
-                        currentPropertyState = this.state.properties[property.name] !== undefined
-                            ? this.state.properties[property.name]
-                            : get(this.state.properties, property.name);
+                        currentPropertyState =
+                            this.state.properties[property.name] !== undefined
+                                ? this.state.properties[property.name]
+                                : get(this.state.properties, property.name);
                     } catch (e) {
-                        currentPropertyState = get(this.state.properties, property.name);
+                        currentPropertyState = get(
+                            this.state.properties,
+                            property.name
+                        );
                     }
                     const errors: string[] = [];
 
                     property.validators.forEach((validator: Validator) => {
-                        if (!validator.fn(
-                            this.getCurrentPropertyValue(currentPropertyState),
-                            this.state.properties
-                        )) {
-                            errors.push(validator.error || currentPropertyState.fallbackError);
+                        if (
+                            !validator.fn(
+                                this.getCurrentPropertyValue(
+                                    currentPropertyState
+                                ),
+                                this.state.properties
+                            )
+                        ) {
+                            errors.push(
+                                validator.error ||
+                                    currentPropertyState.fallbackError
+                            );
                         }
                     });
 
@@ -235,9 +296,15 @@ export function validate(properties: Property[]) {
                         this.setState((prevState: any) => {
                             const newState = { ...prevState };
                             try {
-                                newState.properties[property.name].errors = errors;
+                                newState.properties[
+                                    property.name
+                                ].errors = errors;
                             } catch (e) {
-                                set(newState.properties, `${property.name}.errors`, errors);
+                                set(
+                                    newState.properties,
+                                    `${property.name}.errors`,
+                                    errors
+                                );
                             }
                             return newState;
                         });
@@ -253,7 +320,10 @@ export function validate(properties: Property[]) {
                 try {
                     return this.state.properties[property.name].value;
                 } catch (e) {
-                    return (get(this.state.properties, property.name) as PropertyInState).value;
+                    return (get(
+                        this.state.properties,
+                        property.name
+                    ) as PropertyInState).value;
                 }
             }
         };
