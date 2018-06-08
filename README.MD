@@ -5,6 +5,13 @@
 With `React simple validation` you can speed up form creation with react
 and typescript.
 
+The idea is simple. Your component wrapped in `validate` HOC will receive
+prop for every validated entity. That prop will have few properties (see below).
+Thanks to them you will be able to display and change value of entity, validate it,
+display and clear errors.
+That's all. Now you should handle value and errors in your component. You can use
+any components you wan't, it is up to you.
+
 # Installation
 
 `npm install --save-dev react-simple-validation`
@@ -33,15 +40,21 @@ interface NewsletterFormProps {
 
 // use HOC as decorator
 @validate([{
-    name: "email", // proprety name, it will be exposed in props
-    value: "", // initial value
-    validators: [{ // list of validators...
-        fn: (value: any) => !!value.trim(), // validator, if return false - field is invalid
-        error: "Email is empty." // error message for that specific validator
+    // proprety name, it will be exposed in props
+    name: "email",
+    // initial value, empty string in that case
+    value: "", 
+    // list of validators
+    validators: [{ 
+        // validator function, if return false - field is invalid and error message will be stored in `errors` property
+        fn: (value: any) => !!value.trim(), 
+        // error message for that specific validator
+        error: "Email is empty." 
     }, {
         fn: (value: any) => value.indexOf("@") >= 0
     }],
-    error: "Fallback error for validator without own error." // error message used if validator hasn't own error message defined
+    // fallback error message (second validator doesn't have own message, so it will use that one)
+    error: "Fallback error for validator without own error."
 }, {
     name: "agreement",
     value: false,
@@ -56,7 +69,7 @@ class NewsletterForm extends React.Component<NewsletterFormProps, any> {
             <form 
                 onSumbit={() => {
                     props.validator.validateAll(() => {
-                        // all properties validated
+                        // all properties are validated
                         // we can read errors from props and proceed
                     });
                 }}
@@ -64,7 +77,8 @@ class NewsletterForm extends React.Component<NewsletterFormProps, any> {
                 // every property defined in @validate() will be exposed
                 // in component props, so we have access
                 // to it's current value, list of errors and methods
-                // for changing value and clear all errors
+                // for changing value, clear all errors and validate that
+                // specific prop
                 <input
                     type="text"
                     value={props.email.value}
@@ -93,57 +107,63 @@ class NewsletterForm extends React.Component<NewsletterFormProps, any> {
 
 # API
 
-## validate(options: ValidationOptions)
+## `validate(options: ValidationOptions)`
 
-## ValidationOptions
+## `ValidationOptions`
 
-### name: string;
-The name of the validated property. Props with that name will be exposed on decorated component (structure of that props is described below in "..." section).
+#### `name: string`
+The name of the validated property. Props with that name will be exposed on decorated component (structure of that props is described below in `PropertyWithValidation` section).
 
-### value: string|boolean
+#### `value: string|boolean`
 Initial value of the property. If property is a list, then all items in the list will have that value.
 
-### initialValueFromProps?: boolean
+#### `initialValueFromProps?: boolean`
 If you have to provide initial value from props (for example: from redux store), then you should specify `initialValueFromProps: true`. Value of prop with name specified in `name` property will be used as initial value.
 
-### list?: boolean;
+#### `list?: boolean`
 If true, then property will be a list.
 
-### length?: number;
+#### `length?: number`
 If property is a list, then you have to provide length of the list.
 
-### validators: Validator[];
+#### `validators: Validator[]`
 Array of validators. See `Validator` section for more details. In validation stage
 every validator will be fired and if it return `false` then `error` will be save in errors list.
 
-### error?: string;
+#### `error?: string`
 Fallback error message. If some validator doesn't have own error message, then that message will be used.
 
 ## Validator
 
-### fn: (value: any) => boolean
+#### `fn: (value: any) => boolean`
 Function fired during the validation stage. It takes value of the proerties and returns `false` if property is invalid.
 
-### error?: string;
+#### `error?: string`
 Error that will be saved in errors list of the property passed to the decorated component, if related validator return `false`.
 
 ## PropertyWithValidation
-Property passed from HOC to decorated component has following shape:
+Property passed from HOC to decorated component has following shape for every specified property:
 
-### value: any;
+#### `value: any`
 Value of the property.
 
-### errors: string[];
+#### `errors: string[]`
 List of errors returned from last validation.
 
-### change: (value: any) => void;
+#### `change: (value: any) => void`
 Callback for changing value of the property. You can also change value using redux or any other custom solution and pass only a value to validation. For that you have to use `initialValueFromProps` option.
 
-### validate: () => void;
+#### `validate: () => void`
 Method that will fire validation of that property.
 
-### cleanErrors: () => void;
+#### `cleanErrors: () => void`
 Method to clean all errors from last validation. Useful when you want to clear `error state` of the form input after focus/change event.
+
+Moreover your component will receive `validator` prop with following properies:
+
+#### `validateAll: (callback?: () => void) => void`
+Method to validate all properties. You can pass callback in which you will be able to read all errors from properties
+and react to the result of validation.
 
 # TODO
 
