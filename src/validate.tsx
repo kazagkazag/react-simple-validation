@@ -26,8 +26,20 @@ interface PropertyInState {
     external: boolean;
 }
 
+interface FormValidator {
+    validateAll: (callback?: () => void) => void;
+}
+
+interface PropertyInChildrenProps {
+    value: string | boolean;
+    errors: string[];
+    change: (newValue: any) => void;
+    validate: () => void;
+    cleanErrors: () => void;
+}
+
 interface PropertiesInChildrenProps {
-    [key: string]: any;
+    [key: string]: FormValidator | PropertyInChildrenProps | PropertyInChildrenProps[];
 }
 
 interface PossibleProps {
@@ -73,7 +85,7 @@ export function validate(properties: Property[]) {
 
             private initializeValidatedProperties() {
                 const validationProps = {} as {
-                    [key: string]: any;
+                    [key: string]: PropertyInChildrenProps | PropertyInChildrenProps[];
                 };
 
                 properties.forEach((prop: Property) => {

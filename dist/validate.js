@@ -183,7 +183,6 @@ function validate(properties) {
                             catch (e) {
                                 set(newState.properties, property.name + ".errors", errors);
                             }
-                            set(newState.properties, property.name + ".errors", errors);
                             return newState;
                         });
                     }

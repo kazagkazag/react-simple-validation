@@ -144,3 +144,10 @@ Method that will fire validation of that property.
 
 ### cleanErrors: () => void;
 Method to clean all errors from last validation. Useful when you want to clear `error state` of the form input after focus/change event.
+
+# TODO
+
+[] Add errors count to `validator` prop
+[] Handle value from external source
+[] Accept error message as a function and pass props and value to it
+[] Accept value as a function and pass props to it
