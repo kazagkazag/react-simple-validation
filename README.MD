@@ -147,7 +147,7 @@ Method to clean all errors from last validation. Useful when you want to clear `
 
 # TODO
 
-[] Add errors count to `validator` prop
-[] Handle value from external source
-[] Accept error message as a function and pass props and value to it
-[] Accept value as a function and pass props to it
+- [ ] Add errors count to `validator` prop
+- [ ] Handle value from external source
+- [ ] Accept error message as a function and pass props and value to it
+- [ ] Accept value as a function and pass props to it
