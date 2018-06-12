@@ -165,7 +165,7 @@ Moreover your component will receive `validator` prop with following properies:
 Method to validate all properties. You can pass callback in which you will be able to read all errors from properties
 and react to the result of validation.
 
-#### `errorCount: number`
+#### `errorsCount: number`
 Total number of errors for all properties.
 
 # TODO
