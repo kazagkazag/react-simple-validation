@@ -30,6 +30,7 @@ interface PropertyInState {
 
 interface FormValidator {
     validateAll: (callback?: () => void) => void;
+    errorsCount: number;
 }
 
 interface PropertyInChildrenProps {
@@ -105,7 +106,7 @@ export function validate(properties: Property[]) {
                                       value: prop.value,
                                       errors: [],
                                       name: `${prop.name}[${index}]`,
-                                      validators: prop.validators,
+                                      validators: prop.validators || [],
                                       fallbackError: prop.error,
                                       external: false
                                   } as PropertyInState)
@@ -114,7 +115,7 @@ export function validate(properties: Property[]) {
                               value: this.getInitialValue(prop),
                               errors: [],
                               name: prop.name,
-                              validators: prop.validators,
+                              validators: prop.validators || [],
                               fallbackError: prop.error
                           } as PropertyInState);
                 });
@@ -154,22 +155,26 @@ export function validate(properties: Property[]) {
 
             private prepareValidatedPropertiesForChild() {
                 const validationProperties: PropertiesInChildrenProps = {};
+                let errorsCount = 0;
 
                 Object.keys(this.state.properties).forEach(
                     (propertyName: string) => {
                         const property = this.state.properties[propertyName];
-                        validationProperties[propertyName] = Array.isArray(
-                            property
-                        )
-                            ? property.map((propertyItem: any) => ({
-                                  value: propertyItem.value,
-                                  errors: propertyItem.errors,
-                                  change: this.getChanger(propertyItem),
-                                  validate: this.getValidator(propertyItem),
-                                  cleanErrors: this.getErrorCleaner(
-                                      propertyItem
-                                  )
-                              }))
+                        const isList = Array.isArray(property);
+
+                        validationProperties[propertyName] = isList
+                            ? property.map((propertyItem: any) => {
+                                  errorsCount += propertyItem.errors.length;
+                                  return {
+                                      value: propertyItem.value,
+                                      errors: propertyItem.errors,
+                                      change: this.getChanger(propertyItem),
+                                      validate: this.getValidator(propertyItem),
+                                      cleanErrors: this.getErrorCleaner(
+                                          propertyItem
+                                      )
+                                  };
+                              })
                             : {
                                   value: property.value,
                                   errors: property.errors,
@@ -177,6 +182,10 @@ export function validate(properties: Property[]) {
                                   validate: this.getValidator(property),
                                   cleanErrors: this.getErrorCleaner(property)
                               };
+
+                        if (!isList) {
+                            errorsCount += property.errors.length;
+                        }
                     }
                 );
 
@@ -215,7 +224,8 @@ export function validate(properties: Property[]) {
                 }
 
                 validationProperties.validator = {
-                    validateAll: validateAll.bind(this)
+                    validateAll: validateAll.bind(this),
+                    errorsCount
                 };
 
                 return validationProperties;

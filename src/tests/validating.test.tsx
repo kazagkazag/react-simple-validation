@@ -237,6 +237,54 @@ describe("validate", () => {
         ]);
     });
 
+    test("should expose global error count", () => {
+        const Checker = (props: any) => {
+            return (
+                <div>
+                    <input onChange={() => {
+                        props.testProp1.change("");
+                        props.testProp2.change(2);
+                    }} />
+                    <button
+                        onClick={() => {
+                            props.validator.validateAll();
+                        }}
+                    >
+                        Test
+                    </button>
+                </div>
+            );
+        };
+
+        @validate([{
+            name: "testProp1",
+            value: "",
+            validators: [{
+                fn: (value: any) => value.length > 0,
+            }],
+            error: "Prop 1 error"
+        }, {
+            name: "testProp2",
+            value: 1,
+            validators: [{
+                fn: (value: any) => value.length > 3,
+            }],
+            error: "Prop 2 error"
+        }])
+        class TestComponent extends React.Component<any, any> {
+            public render() {
+                return <Checker {...this.props} />;
+            }
+        }
+
+        const testComponentWithValidation = mount(<TestComponent/>);
+
+        testComponentWithValidation.find(Checker).find("input").simulate("change");
+        testComponentWithValidation.find(Checker).find("button").simulate("click");
+
+        expect(testComponentWithValidation.find(Checker).props().validator.errorsCount).toBe(2);
+    });
+
     test("should be able to validate all properties and call success callback", () => {
         const callback = jest.fn();
         const Checker = (props: any) => {
