@@ -18,7 +18,7 @@ any components you wan't, it is up to you.
 
 There is no need to install types, because they are provided with the package.
 
-# Usage
+# Example
 
 ## Simple newsletter form
 
@@ -109,10 +109,14 @@ class NewsletterForm extends React.Component<NewsletterFormProps, any> {
 
 ## `validate(options: ValidationOptions)`
 
+Higher Order Function that returns component with additional props. For every property defined in [ValidationOptions](#validationoptions) your component will receive prop with the same name with shape described by [PropertyWithValidation](#propertywithvalidation).
+
+# Interfaces
+
 ## `ValidationOptions`
 
 #### `name: string`
-The name of the validated property. Props with that name will be exposed on decorated component (structure of that props is described below in `PropertyWithValidation` section).
+The name of the validated property. Props with that name will be exposed on decorated component (structure of that props is described below in [PropertyWithValidation](#propertywithvalidation)).
 
 #### `value: string|boolean`
 Initial value of the property. If property is a list, then all items in the list will have that value.
@@ -127,7 +131,7 @@ If true, then property will be a list.
 If property is a list, then you have to provide length of the list.
 
 #### `validators: Validator[]`
-Array of validators. See `Validator` section for more details. In validation stage
+Array of validators. See [Validator](#validator) for more details. In validation stage
 every validator will be fired and if it return `false` then `error` will be save in errors list.
 
 #### `error?: string`
@@ -135,14 +139,15 @@ Fallback error message. If some validator doesn't have own error message, then t
 
 ## Validator
 
-#### `fn: (value: any) => boolean`
-Function fired during the validation stage. It takes value of the proerties and returns `false` if property is invalid.
+#### `fn: (value: any, properties: {[key: string]: SinglePropertyWithValidation}) => boolean`
+Function fired during the validation stage. It takes value of the validated property and all other properties and returns `false` if property is invalid.
 
 #### `error?: string`
 Error that will be saved in errors list of the property passed to the decorated component, if related validator return `false`.
 
-## PropertyWithValidation
-Property passed from HOC to decorated component has following shape for every specified property:
+## PropertyWithValidation = SinglePropertyWithValidation | SharedValidator
+
+## SinglePropertyWithValidation
 
 #### `value: any`
 Value of the property.
@@ -159,13 +164,15 @@ Method that will fire validation of that property.
 #### `cleanErrors: () => void`
 Method to clean all errors from last validation. Useful when you want to clear `error state` of the form input after focus/change event.
 
+## SharedValidator
+
 Moreover your component will receive `validator` prop with following properies:
 
 #### `validateAll: (callback?: () => void) => void`
 Method to validate all properties. You can pass callback in which you will be able to read all errors from properties
 and react to the result of validation.
 
-#### `errorsCount: number`
+#### `errorCount: number`
 Total number of errors for all properties.
 
 # TODO
