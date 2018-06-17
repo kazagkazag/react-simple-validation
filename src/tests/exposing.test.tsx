@@ -123,5 +123,30 @@ describe("validate", () => {
         expect(typeof checker.props().testProp1.validate).toBe("function");
         expect(typeof checker.props().testProp1.cleanErrors).toBe("function");
     });
+
+    test("should expose property value as empty string for value initialized without value specified", () => {
+        const propsProvider = mountTestComponent(
+            [
+                {
+                    name: "testProp1",
+                    validators: [
+                        {
+                            fn: (value: any) => value === "some value",
+                            error: "Some error"
+                        }
+                    ],
+                    error: "Some error"
+                }
+            ]
+        );
+        const checker = propsProvider.find(Checker);
+
+        expect(checker.props().testProp1.value).toBe("");
+        expect(typeof checker.props().testProp1.change).toBe("function");
+        expect(checker.props().testProp1.errors).toEqual([]);
+        expect(typeof checker.props().testProp1.validate).toBe("function");
+        expect(typeof checker.props().testProp1.cleanErrors).toBe("function");
+    });
+
 });
 /* tslint:enable max-classes-per-file */

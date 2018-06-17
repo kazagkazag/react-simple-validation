@@ -119,10 +119,12 @@ Higher Order Function that returns component with additional props. For every pr
 The name of the validated property. Props with that name will be exposed on decorated component (structure of that props is described below in [PropertyWithValidation](#propertywithvalidation)).
 
 #### `value: string|boolean`
-Initial value of the property. If property is a list, then all items in the list will have that value.
+Initial value of the property. If property is a list, then all items in the list will have that value. If not provided, then
+empty string will be used as default.
 
-#### `initialValueFromProps?: boolean`
-If you have to provide initial value from props (for example: from redux store), then you should specify `initialValueFromProps: true`. Value of prop with name specified in `name` property will be used as initial value.
+#### `initialValueFromProps?: boolean | (props: any) => any`
+If you have to provide initial value from props (for example: from redux store), then you should specify `initialValueFromProps: true`. If `true` - value of prop with name specified in `name` property will be used as initial value.
+If `function` provided, then function will be used to get value from all component props.
 
 #### `list?: boolean`
 If true, then property will be a list.

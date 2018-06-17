@@ -142,7 +142,7 @@ export function validate(properties: Property[]) {
                     );
                 }
 
-                return prop.value;
+                return prop.value === undefined ? "" : prop.value;
             }
 
             private getValueFromOriginalPropsByName(propName: string) {
