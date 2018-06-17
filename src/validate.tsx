@@ -29,7 +29,7 @@ interface PropertyInState {
 }
 
 interface FormValidator {
-    validateAll: (callback?: () => void) => void;
+    validateAll: (callback?: () => void) => boolean;
     errorsCount: number;
 }
 
@@ -37,7 +37,7 @@ interface PropertyInChildrenProps {
     value: string | boolean;
     errors: string[];
     change: (newValue: any) => void;
-    validate: () => void;
+    validate: () => boolean;
     cleanErrors: () => void;
 }
 
@@ -190,8 +190,10 @@ export function validate(properties: Property[]) {
                 );
 
                 function validateAll(callback?: () => void) {
+                    let isAllValid = true;
+
                     function validateSingle(property: any) {
-                        property.validate();
+                        return property.validate();
                     }
 
                     function traverseProperties(validatedProperties: any) {
@@ -200,9 +202,13 @@ export function validate(properties: Property[]) {
                                 if (
                                     validatedProperties[propertyName].validate
                                 ) {
-                                    validateSingle(
+                                    const isPropertyValid = validateSingle(
                                         validatedProperties[propertyName]
                                     );
+
+                                    if (!isPropertyValid) {
+                                        isAllValid = false;
+                                    }
                                 } else if (
                                     Array.isArray(
                                         validatedProperties[propertyName]
@@ -221,6 +227,8 @@ export function validate(properties: Property[]) {
                     if (callback) {
                         this.forceUpdate(callback);
                     }
+
+                    return isAllValid;
                 }
 
                 validationProperties.validator = {
@@ -319,6 +327,8 @@ export function validate(properties: Property[]) {
                             return newState;
                         });
                     }
+
+                    return errors.length === 0 ? true : false;
                 };
             }
 

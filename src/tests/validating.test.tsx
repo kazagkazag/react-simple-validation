@@ -45,6 +45,62 @@ describe("validate", () => {
         expect(testComponentWithValidation.state().properties.testProp1.errors).toEqual([]);
     });
 
+    test("should return info about validation succeeded", () => {
+        const Checker = (props: any) => {
+            return (
+                <div />
+            );
+        };
+
+        @validate([{
+            name: "testProp1",
+            value: "Pass validation",
+            validators: [{
+                fn: (value: any) => value.length > 0,
+                error: "Validator error"
+            }],
+            error: "Some error"
+        }])
+        class TestComponent extends React.Component<any, any> {
+            public render() {
+                return <Checker {...this.props} />;
+            }
+        }
+
+        const testComponentWithValidation = mount(<TestComponent/>);
+
+        const result = testComponentWithValidation.find(Checker).props().testProp1.validate();
+        expect(result).toBe(true);
+    });
+
+    test("should return info about validation failed", () => {
+        const Checker = (props: any) => {
+            return (
+                <div />
+            );
+        };
+
+        @validate([{
+            name: "testProp1",
+            value: "Do not pass validation",
+            validators: [{
+                fn: (value: any) => value === "Pass validation",
+                error: "Validator error"
+            }],
+            error: "Some error"
+        }])
+        class TestComponent extends React.Component<any, any> {
+            public render() {
+                return <Checker {...this.props} />;
+            }
+        }
+
+        const testComponentWithValidation = mount(<TestComponent/>);
+
+        const result = testComponentWithValidation.find(Checker).props().testProp1.validate();
+        expect(result).toBe(false);
+    });
+
     test("should validate property initialized from external props", () => {
         const Checker = (props: any) => {
             return (
@@ -235,6 +291,74 @@ describe("validate", () => {
         expect(testComponentWithValidation.state().properties.testProp2.errors).toEqual([
             "Prop 2 error"
         ]);
+    });
+
+    test("should be able to validate all properties and return info if validation succeeded", () => {
+        const Checker = (props: any) => {
+            return (
+                <div />
+            );
+        };
+
+        @validate([{
+            name: "testProp1",
+            value: "pass validation",
+            validators: [{
+                fn: (value: any) => value.length > 0,
+            }],
+            error: "Prop 1 error"
+        }, {
+            name: "testProp2",
+            value: "pass validation too",
+            validators: [{
+                fn: (value: any) => value.length > 0,
+            }],
+            error: "Prop 2 error"
+        }])
+        class TestComponent extends React.Component<any, any> {
+            public render() {
+                return <Checker {...this.props} />;
+            }
+        }
+
+        const testComponentWithValidation = mount(<TestComponent/>);
+        const result = testComponentWithValidation.find(Checker).props().validator.validateAll();
+
+        expect(result).toBe(true);
+    });
+
+    test("should be able to validate all properties and return info if validation succeeded", () => {
+        const Checker = (props: any) => {
+            return (
+                <div />
+            );
+        };
+
+        @validate([{
+            name: "testProp1",
+            value: "pass validation",
+            validators: [{
+                fn: (value: any) => value.length > 0,
+            }],
+            error: "Prop 1 error"
+        }, {
+            name: "testProp2",
+            value: "do not pass validation too",
+            validators: [{
+                fn: (value: any) => value.length  === "pass validation",
+            }],
+            error: "Prop 2 error"
+        }])
+        class TestComponent extends React.Component<any, any> {
+            public render() {
+                return <Checker {...this.props} />;
+            }
+        }
+
+        const testComponentWithValidation = mount(<TestComponent/>);
+        const result = testComponentWithValidation.find(Checker).props().validator.validateAll();
+
+        expect(result).toBe(false);
     });
 
     test("should expose global error count", () => {

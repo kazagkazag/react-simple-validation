@@ -160,8 +160,8 @@ List of errors returned from last validation.
 #### `change: (value: any) => void`
 Callback for changing value of the property. You can also change value using redux or any other custom solution and pass only a value to validation. For that you have to use `initialValueFromProps` option.
 
-#### `validate: () => void`
-Method that will fire validation of that property.
+#### `validate: () => boolean`
+Method that will fire validation of that property. Returns `true` if valid.
 
 #### `cleanErrors: () => void`
 Method to clean all errors from last validation. Useful when you want to clear `error state` of the form input after focus/change event.
@@ -170,9 +170,10 @@ Method to clean all errors from last validation. Useful when you want to clear `
 
 Moreover your component will receive `validator` prop with following properies:
 
-#### `validateAll: (callback?: () => void) => void`
+#### `validateAll: (callback?: () => void) => boolean`
 Method to validate all properties. You can pass callback in which you will be able to read all errors from properties
 and react to the result of validation.
+Returns `true` if all properties are valid.
 
 #### `errorCount: number`
 Total number of errors for all properties.
