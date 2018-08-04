@@ -13,6 +13,11 @@ export interface PropertyWithValidation {
     value: any;
     errors: string[];
     change: (value: any) => void;
-    validate: () => void;
+    validate: () => boolean;
     cleanErrors: () => void;
+}
+
+export interface Validator {
+    errorsCount: number;
+    validateAll(callback: (errors?: {[key: string]: string[]}) => void): boolean;
 }

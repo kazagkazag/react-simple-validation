@@ -170,7 +170,7 @@ Method to clean all errors from last validation. Useful when you want to clear `
 
 Moreover your component will receive `validator` prop with following properies:
 
-#### `validateAll: (callback?: () => void) => boolean`
+#### `validateAll: (callback?: (errors?: {[key: string]: string[]}) => void) => boolean`
 Method to validate all properties. You can pass callback in which you will be able to read all errors from properties
 and react to the result of validation.
 Returns `true` if all properties are valid.

@@ -45,24 +45,13 @@ function validate(properties) {
                 var _this = this;
                 var validationProps = {};
                 properties.forEach(function (prop) {
-                    validationProps[prop.name] = prop.list
-                        ? Array.apply(null, Array(prop.length)).map(function (x, index) {
-                            return ({
-                                value: prop.value,
-                                errors: [],
-                                name: prop.name + "[" + index + "]",
-                                validators: prop.validators || [],
-                                fallbackError: prop.error,
-                                external: false
-                            });
-                        })
-                        : {
-                            value: _this.getInitialValue(prop),
-                            errors: [],
-                            name: prop.name,
-                            validators: prop.validators || [],
-                            fallbackError: prop.error
-                        };
+                    validationProps[prop.name] = {
+                        value: _this.getInitialValue(prop),
+                        errors: [],
+                        name: prop.name,
+                        validators: prop.validators || [],
+                        fallbackError: prop.error
+                    };
                 });
                 this.setState({
                     properties: validationProps
@@ -77,7 +66,7 @@ function validate(properties) {
                 if (getInitialValueFromPropsUsingFunction) {
                     return this.getValueFromOriginalPropsUsingFn(prop.initialValueFromProps);
                 }
-                return prop.value;
+                return prop.value === undefined ? "" : prop.value;
             };
             WithValidation.prototype.getValueFromOriginalPropsByName = function (propName) {
                 return get(this.props, propName);
@@ -91,47 +80,38 @@ function validate(properties) {
                 var errorsCount = 0;
                 Object.keys(this.state.properties).forEach(function (propertyName) {
                     var property = _this.state.properties[propertyName];
-                    var isList = Array.isArray(property);
-                    validationProperties[propertyName] = isList
-                        ? property.map(function (propertyItem) {
-                            errorsCount += propertyItem.errors.length;
-                            return {
-                                value: propertyItem.value,
-                                errors: propertyItem.errors,
-                                change: _this.getChanger(propertyItem),
-                                validate: _this.getValidator(propertyItem),
-                                cleanErrors: _this.getErrorCleaner(propertyItem)
-                            };
-                        })
-                        : {
-                            value: property.value,
-                            errors: property.errors,
-                            change: _this.getChanger(property),
-                            validate: _this.getValidator(property),
-                            cleanErrors: _this.getErrorCleaner(property)
-                        };
-                    if (!isList) {
-                        errorsCount += property.errors.length;
-                    }
+                    validationProperties[propertyName] = {
+                        value: property.value,
+                        errors: property.errors,
+                        change: _this.getChanger(property),
+                        validate: _this.getValidator(property),
+                        cleanErrors: _this.getErrorCleaner(property)
+                    };
+                    errorsCount += property.errors.length;
                 });
                 function validateAll(callback) {
+                    var isAllValid = true;
+                    var allErrors = {};
                     function validateSingle(property) {
-                        property.validate();
+                        return property.validate();
                     }
-                    function traverseProperties(validatedProperties) {
-                        Object.keys(validatedProperties).forEach(function (propertyName) {
-                            if (validatedProperties[propertyName].validate) {
-                                validateSingle(validatedProperties[propertyName]);
+                    Object.keys(validationProperties).forEach(function (propertyName) {
+                        if (validationProperties[propertyName].validate) {
+                            var _a = validateSingle(validationProperties[propertyName]), isValid = _a.isValid, errors = _a.errors;
+                            if (!isValid) {
+                                isAllValid = false;
+                                allErrors[propertyName] = errors;
                             }
-                            else if (Array.isArray(validatedProperties[propertyName])) {
-                                traverseProperties(validatedProperties[propertyName]);
-                            }
-                        });
-                    }
-                    traverseProperties(validationProperties);
+                        }
+                    });
+                    var validateAllResult = {
+                        isValid: isAllValid,
+                        errors: isAllValid ? null : allErrors
+                    };
                     if (callback) {
-                        this.forceUpdate(callback);
+                        this.forceUpdate(function () { return callback(validateAllResult); });
                     }
+                    return validateAllResult;
                 }
                 validationProperties.validator = {
                     validateAll: validateAll.bind(this),
@@ -195,18 +175,24 @@ function validate(properties) {
                                 currentPropertyState.fallbackError);
                         }
                     });
+                    var afterValidationErrors = null;
                     if (errors.length) {
-                        _this.setState(function (prevState) {
-                            var newState = __assign({}, prevState);
-                            try {
-                                newState.properties[property.name].errors = errors;
-                            }
-                            catch (e) {
-                                set(newState.properties, property.name + ".errors", errors);
-                            }
-                            return newState;
-                        });
+                        var newState = __assign({}, _this.state);
+                        try {
+                            newState.properties[property.name].errors = errors;
+                        }
+                        catch (e) {
+                            set(newState.properties, property.name + ".errors", errors);
+                        }
+                        if (get(newState.properties, property.name + ".errors").length) {
+                            afterValidationErrors = get(newState.properties, property.name + ".errors");
+                        }
+                        _this.setState(newState);
                     }
+                    return {
+                        isValid: afterValidationErrors === null,
+                        errors: afterValidationErrors
+                    };
                 };
             };
             WithValidation.prototype.getErrorCleaner = function (property) {

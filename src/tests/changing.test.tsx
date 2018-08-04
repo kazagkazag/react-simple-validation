@@ -72,32 +72,5 @@ describe("validate", () => {
             "Test new value"
         );
     });
-
-    test("should change value of item in property", () => {
-        const testComponentWithValidation = mountTestComponent([
-            {
-                list: true,
-                length: 3,
-                name: "testProp3",
-                value: "",
-                validators: [
-                    {
-                        fn: (value: any) => !!value,
-                        error: "Some error"
-                    }
-                ],
-                error: "Some error"
-            }
-        ]);
-
-        testComponentWithValidation
-            .find(Checker)
-            .find("button")
-            .simulate("click");
-
-        expect(testComponentWithValidation.find(".testProp3Value").text()).toBe(
-            "Test new value"
-        );
-    });
 });
 /* tslint:enable max-classes-per-file */
