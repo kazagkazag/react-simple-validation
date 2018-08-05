@@ -126,12 +126,6 @@ empty string will be used as default.
 If you have to provide initial value from props (for example: from redux store), then you should specify `initialValueFromProps: true`. If `true` - value of prop with name specified in `name` property will be used as initial value.
 If `function` provided, then function will be used to get value from all component props.
 
-#### `list?: boolean`
-If true, then property will be a list.
-
-#### `length?: number`
-If property is a list, then you have to provide length of the list.
-
 #### `validators: Validator[]`
 Array of validators. See [Validator](#validator) for more details. In validation stage
 every validator will be fired and if it return `false` then `error` will be save in errors list.
@@ -170,7 +164,7 @@ Method to clean all errors from last validation. Useful when you want to clear `
 
 Moreover your component will receive `validator` prop with following properies:
 
-#### `validateAll: (callback?: (errors?: {[key: string]: string[]}) => void) => boolean`
+#### `validateAll: (callback?: (ValidateAllResult) => void) => ValidateAllResult`
 Method to validate all properties. You can pass callback in which you will be able to read all errors from properties
 and react to the result of validation.
 Returns `true` if all properties are valid.
@@ -178,9 +172,12 @@ Returns `true` if all properties are valid.
 #### `errorCount: number`
 Total number of errors for all properties.
 
+## `ValidateAllResult` 
+
+#### `isValid: boolean`
+
+#### `errors: {[key: string]: string[]}}`
+
 # TODO
 
-- [x] Add errors count to `validator` prop
-- [ ] Handle value from external source
 - [ ] Accept error message as a function and pass props and value to it
-- [x] Accept initial value as a function and pass props to it

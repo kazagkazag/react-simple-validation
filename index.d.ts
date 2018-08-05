@@ -3,7 +3,7 @@
 // Definitions by: Kamil Zagrabski
 
 import * as React from "react";
-import {Property} from "./src/validate";
+import {Property, ValidateAllResult} from "./src/validate";
 
 export function validate(properties: Property[]): <OriginalProps extends {}>(
     BaseComponent: React.ComponentClass<OriginalProps> | React.StatelessComponent<OriginalProps>
@@ -19,5 +19,5 @@ export interface PropertyWithValidation {
 
 export interface Validator {
     errorsCount: number;
-    validateAll(callback: (errors?: {[key: string]: string[]}) => void): boolean;
+    validateAll(callback: (ValidateAllResult) => void): ValidateAllResult;
 }

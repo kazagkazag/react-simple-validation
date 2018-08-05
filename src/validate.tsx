@@ -7,6 +7,15 @@ interface Validator {
     error?: string;
 }
 
+export interface ValidateAllResult {
+    isValid: boolean;
+    errors?: ValidateAllResultErrors;
+}
+
+interface ValidateAllResultErrors {
+    [propertyName: string]: string;
+}
+
 type PropsGetter = (props: any) => any;
 
 export interface Property {
