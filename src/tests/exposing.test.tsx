@@ -1,7 +1,6 @@
 import "jest";
 import * as React from "react";
 import { Checker, mountTestComponent } from "./utils";
-import { validate } from "../validate";
 
 /* tslint:disable max-classes-per-file */
 describe("validate", () => {

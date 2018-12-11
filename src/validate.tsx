@@ -79,12 +79,8 @@ export function validate(properties: Property[]) {
                 super(props);
 
                 this.state = {
-                    properties: {}
+                    properties: this.initializeValidatedProperties()
                 };
-            }
-
-            public componentDidMount() {
-                this.initializeValidatedProperties();
             }
 
             public render() {
@@ -110,9 +106,7 @@ export function validate(properties: Property[]) {
                     } as PropertyInState;
                 });
 
-                this.setState({
-                    properties: validationProps
-                });
+                return validationProps;
             }
 
             private getInitialValue(prop: Property) {
@@ -301,12 +295,12 @@ export function validate(properties: Property[]) {
                             (get(
                                 newState.properties,
                                 `${property.name}.errors`
-                            ) as string[]).length
+                            ) as unknown as string[]).length
                         ) {
                             afterValidationErrors = get(
                                 newState.properties,
                                 `${property.name}.errors`
-                            );
+                            ) as unknown as string[];
                         }
 
                         this.setState(newState);
