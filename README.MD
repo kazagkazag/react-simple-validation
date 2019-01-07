@@ -107,13 +107,13 @@ class NewsletterForm extends React.Component<NewsletterFormProps, any> {
 
 # API
 
-## `validate(options: ValidationOptions)`
+## `validate(options: ValidationOption[])`
 
-Higher Order Function that returns component with additional props. For every property defined in [ValidationOptions](#validationoptions) your component will receive prop with the same name with shape described by [PropertyWithValidation](#propertywithvalidation).
+Higher Order Function that returns component with additional props. For every property defined in array of [ValidationOption](#validationoption)s your component will receive prop with the same name with shape described by [PropertyWithValidation](#propertywithvalidation--singlepropertywithvalidation--sharedvalidator).
 
 # Interfaces
 
-## `ValidationOptions`
+## `ValidationOption`
 
 #### `name: string`
 The name of the validated property. Props with that name will be exposed on decorated component (structure of that props is described below in [PropertyWithValidation](#propertywithvalidation)).
