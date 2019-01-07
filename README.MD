@@ -1,4 +1,6 @@
-# IN PROGRESS....
+# IMPORTANT
+
+There is 2.0 branch in which all new features will be introduced.
 
 # Introduction
 
