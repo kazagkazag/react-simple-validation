@@ -62,7 +62,9 @@ interface WithValidationState {
     };
 }
 
-export function validate(properties: Property[]) {
+type PropertiesGenerator = (props: PossibleProps) => Property[];
+
+export function validate(properties: Property[], propertiesGenerator?: PropertiesGenerator) {
     // todo: validate properties!
     // example: do not allow to set external property with initial value
 
@@ -96,17 +98,26 @@ export function validate(properties: Property[]) {
                     [key: string]: PropertyInState;
                 };
 
-                properties.forEach((prop: Property) => {
-                    validationProps[prop.name] = {
-                        value: this.getInitialValue(prop),
-                        errors: [],
-                        name: prop.name,
-                        validators: prop.validators || [],
-                        fallbackError: prop.error
-                    } as PropertyInState;
-                });
+                [...properties, ...this.dynamicValidationProps()]
+                    .forEach((prop: Property) => {
+                        validationProps[prop.name] = {
+                            value: this.getInitialValue(prop),
+                            errors: [],
+                            name: prop.name,
+                            validators: prop.validators || [],
+                            fallbackError: prop.error
+                        } as PropertyInState;
+                    });
 
                 return validationProps;
+            }
+
+            private dynamicValidationProps() {
+                if (typeof propertiesGenerator !== "function") {
+                    return [];
+                }
+
+                return propertiesGenerator(this.props);
             }
 
             private getInitialValue(prop: Property) {

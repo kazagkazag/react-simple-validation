@@ -27,7 +27,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var React = require("react");
 var set = require("lodash.set");
 var get = require("lodash.get");
-function validate(properties) {
+function validate(properties, propertiesGenerator) {
     // todo: validate properties!
     // example: do not allow to set external property with initial value
     return function (BaseComponent) {
@@ -47,7 +47,7 @@ function validate(properties) {
             WithValidation.prototype.initializeValidatedProperties = function () {
                 var _this = this;
                 var validationProps = {};
-                properties.forEach(function (prop) {
+                properties.concat(this.dynamicValidationProps()).forEach(function (prop) {
                     validationProps[prop.name] = {
                         value: _this.getInitialValue(prop),
                         errors: [],
@@ -57,6 +57,12 @@ function validate(properties) {
                     };
                 });
                 return validationProps;
+            };
+            WithValidation.prototype.dynamicValidationProps = function () {
+                if (typeof propertiesGenerator !== "function") {
+                    return [];
+                }
+                return propertiesGenerator(this.props);
             };
             WithValidation.prototype.getInitialValue = function (prop) {
                 var getInitialValueFromPropsBasedOnName = prop.initialValueFromProps === true;

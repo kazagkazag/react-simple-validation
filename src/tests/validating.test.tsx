@@ -59,6 +59,45 @@ describe("validate", () => {
         ).toEqual([]);
     });
 
+    test("should generate properties based on props", () => {
+        const Checker = (props: any) => <div />;
+
+        @validate([
+            {
+                name: "testProp1",
+                value: "",
+                validators: [
+                    {
+                        fn: (value: any) => value.length > 0,
+                        error: "Validator error"
+                    }
+                ],
+                error: "Some error"
+            }
+        ], (props: any) => {
+            return [{
+                name: "dynamicProp",
+                value: props.test.someProp + " generated from props",
+                validators: [{
+                    fn: (value: any) => value,
+                    error: "Dynamic prop error"
+                }]
+            }];
+        })
+        class TestComponent extends React.Component<any, any> {
+            public render() {
+                return <Checker {...this.props} />;
+            }
+        }
+
+        const testComponentWithValidation = mount(<TestComponent test={{someProp: "some value"}}/>);
+
+        expect(testComponentWithValidation.state().properties.testProp1.value)
+            .toBe("");
+        expect(testComponentWithValidation.state().properties.dynamicProp.value)
+            .toBe("some value generated from props");
+    });
+
     test("should return info about validation succeeded", () => {
         const Checker = (props: any) => {
             return <div />;

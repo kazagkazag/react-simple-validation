@@ -2,12 +2,34 @@
 // Project: React Simple Validation
 // Definitions by: Kamil Zagrabski
 
-import * as React from "react";
-import {Property, ValidateAllResult} from "./src/validate";
+interface ValidateAllResultErrors {
+    [propertyName: string]: string;
+}
 
-export function validate(properties: Property[]): <OriginalProps extends {}>(
-    BaseComponent: React.ComponentClass<OriginalProps> | React.StatelessComponent<OriginalProps>
-) => any;
+export interface ValidateAllResult {
+    isValid: boolean;
+    errors?: ValidateAllResultErrors;
+}
+
+interface PropertyValidator {
+    fn: (value: any, properties?: any) => boolean;
+    error?: string;
+}
+
+type PropsGetter = (props: any) => any;
+
+export interface Property {
+    name: string;
+    value?: any;
+    initialValueFromProps?: boolean | PropsGetter;
+    validators?: PropertyValidator[];
+    error?: string;
+}
+
+export function validate(
+    properties: Property[],
+    propertiesGenerator?: PropertiesGenerator
+): <OriginalProps extends {}>(BaseComponent: any) => any;
 
 export interface PropertyWithValidation {
     value: any;
@@ -19,5 +41,7 @@ export interface PropertyWithValidation {
 
 export interface Validator {
     errorsCount: number;
-    validateAll(callback: (ValidateAllResult) => void): ValidateAllResult;
+    validateAll(callback?: (results:  ValidateAllResult) => void): ValidateAllResult;
 }
+
+type PropertiesGenerator = (props: any) => Property[];
