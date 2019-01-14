@@ -22,88 +22,310 @@ There is no need to install types, because they are provided with the package.
 
 ## Simple newsletter form
 
-Below you will see how to handle simple newsletter form with `rsv`. The form
-is simplified, so there is no unrelated properties and elements (like `name` or
-`<label>`).
+Below you will see how to handle simple newsletter form with `rsv`. Working code here: [React Simple Validation on CodeSandbox](https://codesandbox.io/s/w76v2vkr55).
+
+#### index.tsx
 
 ```typescript
-// all other imports ...
-// import HOC and Property interface:
-import {validate, PropertyWithValidation} from "react-simple-validation";
+import React from "react";
+import ReactDOM from "react-dom";
 
-// define interface for all properties and global validator:
-interface NewsletterFormProps {
-    email: PropertyWithValidation;
-    agreement: PropertyWithValidation;
-    validator: any;
-}
+import App from "./App";
 
-// use HOC as decorator
-@validate([{
-    // proprety name, it will be exposed in props
-    name: "email",
-    // initial value, empty string in that case
-    value: "", 
-    // list of validators
-    validators: [{ 
-        // validator function, if return false - field is invalid and error message will be stored in `errors` property
-        fn: (value: any) => !!value.trim(), 
-        // error message for that specific validator
-        error: "Email is empty." 
-    }, {
-        fn: (value: any) => value.indexOf("@") >= 0
-    }],
-    // fallback error message (second validator doesn't have own message, so it will use that one)
-    error: "Fallback error for validator without own error."
-}, {
-    name: "agreement",
-    value: false,
-    validators: [{
-        fn: (value: any) => !!value,
-        error: "Agreement is required."
-    }]
-}])
-class NewsletterForm extends React.Component<NewsletterFormProps, any> {
-    public render() {
-        return (
-            <form 
-                onSumbit={() => {
-                    props.validator.validateAll(() => {
-                        // all properties are validated
-                        // we can read errors from props and proceed
-                    });
-                }}
-            >
-                // every property defined in @validate() will be exposed
-                // in component props, so we have access
-                // to it's current value, list of errors and methods
-                // for changing value, clear all errors and validate that
-                // specific prop
-                <input
-                    type="text"
-                    value={props.email.value}
-                    onChange={(e) => props.email.change(e.target.value)}
-                    onFocus={props.email.clearErrors}
-                />
-                <p>{props.email.errors}</p>
+ReactDOM.render(
+  <App
+    user={{ age: 18 }}
+    note="Some note from props"
+    agreements={[
+      {
+        name: "emailContact"
+      },
+      {
+        name: "phoneContact"
+      }
+    ]}
+  />,
+  document.getElementById("root")
+);
 
-                <input
-                    type="checkbox"
-                    value={props.agreement.value}
-                    onChange={() => {
-                        props.agreement.change(!props.agreement.value)
-                    }}
-                    onFocus={props.agreement.clearErrors}
-                />
-                I agree!
-                <p>{props.agreement.errors}</p>
-
-                <button type="sumbit">Sign in</button>
-            </form>
-        )
-    }
-}
 ```
+
+#### App.tsx
+
+```typescript
+import React, { Component } from "react";
+import {
+  validate,
+  PropertyWithValidation,
+  Validator
+} from "react-simple-validation";
+
+// declare props which will be passed from 'validate' HOC as PropertyWithValidation
+interface AppProps {
+  // note 'user' prop, it will be used for 'age' field
+  user: { age: number };
+  name: PropertyWithValidation;
+  age: PropertyWithValidation;
+  role: PropertyWithValidation;
+  newsletter: PropertyWithValidation;
+  gender: PropertyWithValidation;
+  // 'note' is a string at first, but after initial mount it will be PropertyWithValidation
+  note: PropertyWithValidation | string;
+  validator: Validator;
+  // 'agreements' will be used to dynamically generated fields
+  agreements: Array<{
+    name: string;
+  }>;
+}
+
+class App extends Component<AppProps, {}> {
+  render() {
+    // destructure prop created by 'validate' HOC
+    const {
+      name,
+      age,
+      role,
+      newsletter,
+      gender,
+      note,
+      emailContact,
+      phoneContact
+    } = this.props;
+    
+    return (
+      <form
+        onSubmit={e => {
+          e.preventDefault();
+          this.tryToSubmit();
+        }}
+      >
+        <div>
+          <label htmlFor="name">Name:</label>
+          {/* 
+            Every prop created by 'validate' HOC has:
+            'value', 'errors', 'change' callback and 'cleanErrors' callback.
+            Use it wherever you want.
+          */}
+          <input
+            type="text"
+            id="name"
+            value={name.value}
+            onChange={e => name.change(e.target.value)}
+            onBlur={name.cleanErrors}
+          />
+          <p>{name.errors}</p>
+        </div>
+        <div>
+          <label htmlFor="age">Age:</label>
+          <input
+            type="number"
+            id="age"
+            value={age.value}
+            onChange={e => age.change(e.target.value)}
+            onBlur={age.cleanErrors}
+          />
+          <p>{age.errors}</p>
+        </div>
+        <div>
+          <label htmlFor="role">Role:</label>
+          <select
+            id="role"
+            value={role.value}
+            onChange={e => role.change(e.target.value)}
+            onBlur={role.cleanErrors}
+          >
+            <option value="admin">Admin</option>
+            <option value="user">User</option>
+          </select>
+          <p>{role.errors}</p>
+        </div>
+        <div>
+          <input
+            type="checkbox"
+            id="newsletter"
+            value={newsletter.value}
+            onChange={e => newsletter.change(e.target.checked)}
+            onBlur={newsletter.cleanErrors}
+          />
+          <label htmlFor="newsletter">Sign up for newsletter</label>
+          <p>{newsletter.errors}</p>
+        </div>
+        <div>
+          <input
+            type="radio"
+            name="gender"
+            id="male"
+            value={gender.value}
+            onChange={() => gender.change("male")}
+            onBlur={gender.cleanErrors}
+          />
+          <label htmlFor="male">Male</label>
+          <input
+            type="radio"
+            name="gender"
+            id="female"
+            value={gender.value}
+            onChange={() => gender.change("female")}
+            onBlur={gender.cleanErrors}
+          />
+          <label htmlFor="female">Female</label>
+        </div>
+        <div>
+          <label htmlFor="userNote">Note:</label>
+          <textarea
+            id="userNote"
+            value={(note as PropertyWithValidation).value}
+            onChange={e =>
+              (note as PropertyWithValidation).change(e.target.value)
+            }
+            onBlur={(note as PropertyWithValidation).cleanErrors}
+          />
+        </div>
+        {/* 
+          'emailContact' and 'phoneContact' were generated based on agreements
+          passed to the App from index.tsx.
+        */}
+        <div>
+          <input
+            type="checkbox"
+            id="emailContact"
+            value={emailContact.value}
+            onChange={e => emailContact.change(e.target.checked)}
+            onBlur={emailContact.cleanErrors}
+          />
+          <label htmlFor="emailContact">Agree on email contact.</label>
+          <p>{emailContact.errors}</p>
+        </div>
+        <div>
+          <input
+            type="checkbox"
+            id="phoneContact"
+            value={phoneContact.value}
+            onChange={e => phoneContact.change(e.target.checked)}
+            onBlur={phoneContact.cleanErrors}
+          />
+          <label htmlFor="phoneContact">Agree on phone contact.</label>
+          <p>{phoneContact.errors}</p>
+        </div>
+        <div>
+          <button type="submit">Submit</button>
+        </div>
+      </form>
+    );
+  }
+
+  private tryToSubmit() {
+    // Call 'validateAll' from 'validator' prop (passed by 'validate' HOC)
+    // and checkout 'isValid' flag. It there are some errors they will be
+    // in 'errors' object.
+    // You can use also 'async' callback, it will be called in next life cycle
+    // of the App component.
+    const { isValid, errors } = this.props.validator.validateAll(result => {
+      console.log("Result from callback", result);
+    });
+
+    if (isValid) {
+      alert("OK!");
+    } else {
+      alert("Errors: " + JSON.stringify(errors));
+    }
+  }
+}
+
+export default validate(
+  [
+    // Every field should have at least name and validators array.
+    {
+      name: "name",
+      validators: [
+        // You have to pass a function that will be called with current
+        // field value. If it returns true, field will be considered as valid.
+        {
+          fn: name => !!name
+        }
+      ],
+      error: "Name is required"
+    },
+    {
+      name: "age",
+      // Initial value can be computed based on App component's props.
+      initialValueFromProps: props => props.user.age,
+      validators: [
+        // You can pass more than one validator. 
+        // All of them will be called in specified order.
+        {
+          fn: age => parseInt(age) >= 18,
+          error: "User must be older than 18 yo"
+        },
+        {
+          fn: age => parseInt(age) <= 70,
+          error: "User must be younger than 70 yo"
+        }
+      ]
+    },
+    {
+      name: "role",
+      // You can set up initial value.
+      value: "user",
+      validators: [
+        {
+          fn: role => !!role
+        }
+      ],
+      error: "Role is required"
+    },
+    {
+      name: "newsletter",
+      validators: [
+        // Validator function will receive the second argument - a list of all
+        // fields and its values. You can use it to perform multifield validation.
+        {
+          fn: (newsletter, fields) => {
+            return (
+              (newsletter === true && fields.role.value === "user") ||
+              fields.role.value === "admin"
+            );
+          }
+        }
+      ],
+      error: "User must sing up for newsletter"
+    },
+    {
+      name: "gender",
+      value: "male"
+    },
+    {
+      name: "note",
+      // Initial value could be retrieved from 'note' prop of App component.
+      // After first mount, 'note' prop will be overriden and converted to the
+      // PropertyWithValidation. Any future change to
+      // that prop (triggered in App's parrent) will not be reflected!
+      initialValueFromProps: true,
+      validators: [
+        {
+          fn: note => note && note.length < 160,
+          error: "Note under 160 characters is required"
+        }
+      ]
+    }
+  ],
+  // The second argument is a function, that return an list of fields
+  // definitions like above. You can use it to dynamically create
+  // fields, that deppend on external conditions, like parent's state or props.
+  (props: AppProps) =>
+    props.agreements.map(a => ({
+      name: a.name,
+      value: false,
+      validators: [
+        {
+          fn: (value: any) => !!value,
+          error: `Agreement ${a.name} is required.`
+        }
+      ]
+    }))
+)(App);
+```
+
 
 # API
 
