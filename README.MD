@@ -348,6 +348,11 @@ empty string will be used as default.
 If you have to provide initial value from props (for example: from redux store), then you should specify `initialValueFromProps: true`. If `true` - value of prop with name specified in `name` property will be used as initial value.
 If `function` provided, then function will be used to get value from all component props.
 
+#### `syncValue?: boolean | (props: any) => any`
+If `syncValue` is set to `true`, then after every update of props passed to the wrapped component the HOC will look for the the new value of the prop
+with the same name as validated property and update validated property according to the new value if changed.
+If `syncValue` is set to function, then after every update of props passed to the wrapped component the HOC will compute new value of the property using defined function and update validated property value if computed value is different than previous result of the computation.
+
 #### `validators: Validator[]`
 Array of validators. See [Validator](#validator) for more details. In validation stage
 every validator will be fired and if it return `false` then `error` will be save in errors list.

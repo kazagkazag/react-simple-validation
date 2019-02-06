@@ -4,7 +4,9 @@ import get = require("lodash.get");
 import {
     dynamicValidationProperties,
     toValidatedProperties,
-    createValidateAll
+    createValidateAll,
+    getValueFromOriginalPropsByName,
+    getValueFromOriginalPropsUsingFn
 } from "./validatedProperties/validatedProperties";
 
 export interface ValidateAllResultErrors {
@@ -27,6 +29,7 @@ export interface Property {
     name: string;
     value?: any;
     initialValueFromProps?: boolean | PropsGetter;
+    syncValue?: boolean | PropsGetter;
     validators: Validator[];
     error?: string;
 }
@@ -87,12 +90,18 @@ export function validate(
             OriginalProps,
             WithValidationState
         > {
+            private computedProperties: Property[] = [];
+
             constructor(props: any) {
                 super(props);
 
                 this.state = {
                     properties: this.initializeValidatedProperties()
                 };
+            }
+
+            public componentDidUpdate(oldProps: OriginalProps) {
+                this.syncValues(oldProps);
             }
 
             public render() {
@@ -103,15 +112,62 @@ export function validate(
                 );
             }
 
-            private initializeValidatedProperties() {
-                return toValidatedProperties(
-                    [
-                        ...properties,
-                        ...dynamicValidationProperties(
-                            propertiesGenerator,
+            private syncValues(oldProps: OriginalProps) {
+                const propertiesToChange: Array<[string, any]> = [];
+
+                this.computedProperties.forEach((p: Property) => {
+                    if (!p.syncValue) {
+                        return;
+                    }
+
+                    let oldValue;
+                    let newValue;
+
+                    if (typeof p.syncValue === "boolean") {
+                        oldValue = getValueFromOriginalPropsByName(
+                            p.name,
+                            oldProps
+                        );
+                        newValue = getValueFromOriginalPropsByName(
+                            p.name,
                             this.props
-                        )
-                    ],
+                        );
+                    }
+
+                    if (typeof p.syncValue === "function") {
+                        oldValue = getValueFromOriginalPropsUsingFn(
+                            p.syncValue,
+                            oldProps
+                        );
+                        newValue = getValueFromOriginalPropsUsingFn(
+                            p.syncValue,
+                            this.props
+                        );
+                    }
+
+                    if (oldValue === newValue) {
+                        return;
+                    }
+
+                    propertiesToChange.push([p.name, newValue]);
+                });
+
+                if (propertiesToChange.length) {
+                    this.changePropertiesValues(propertiesToChange);
+                }
+            }
+
+            private initializeValidatedProperties() {
+                this.computedProperties = [
+                    ...properties,
+                    ...dynamicValidationProperties(
+                        propertiesGenerator,
+                        this.props
+                    )
+                ];
+
+                return toValidatedProperties(
+                    this.computedProperties,
                     this.props
                 );
             }
@@ -145,6 +201,16 @@ export function validate(
                 };
 
                 return propertiesForChild;
+            }
+
+            private changePropertiesValues(propsToChange: Array<[string, any]>) {
+                this.setState((prevState: any) => {
+                    const newState = { ...prevState };
+                    propsToChange.forEach(([path, value]) => {
+                        set(newState.properties, `${path}.value`, value);
+                    });
+                    return newState;
+                });
             }
 
             private changePropertyValue(propertyPath: string, newValue: any) {

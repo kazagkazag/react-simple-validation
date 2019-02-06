@@ -36,17 +36,48 @@ function validate(properties, propertiesGenerator) {
             __extends(WithValidation, _super);
             function WithValidation(props) {
                 var _this = _super.call(this, props) || this;
+                _this.computedProperties = [];
                 _this.state = {
                     properties: _this.initializeValidatedProperties()
                 };
                 return _this;
             }
+            WithValidation.prototype.componentDidUpdate = function (oldProps) {
+                this.syncValues(oldProps);
+            };
             WithValidation.prototype.render = function () {
                 var validatedProperties = this.prepareValidatedPropertiesForChild();
                 return (React.createElement(BaseComponent, __assign({}, this.props, validatedProperties)));
             };
+            WithValidation.prototype.syncValues = function (oldProps) {
+                var _this = this;
+                var propertiesToChange = [];
+                this.computedProperties.forEach(function (p) {
+                    if (!p.syncValue) {
+                        return;
+                    }
+                    var oldValue;
+                    var newValue;
+                    if (typeof p.syncValue === "boolean") {
+                        oldValue = validatedProperties_1.getValueFromOriginalPropsByName(p.name, oldProps);
+                        newValue = validatedProperties_1.getValueFromOriginalPropsByName(p.name, _this.props);
+                    }
+                    if (typeof p.syncValue === "function") {
+                        oldValue = validatedProperties_1.getValueFromOriginalPropsUsingFn(p.syncValue, oldProps);
+                        newValue = validatedProperties_1.getValueFromOriginalPropsUsingFn(p.syncValue, _this.props);
+                    }
+                    if (oldValue === newValue) {
+                        return;
+                    }
+                    propertiesToChange.push([p.name, newValue]);
+                });
+                if (propertiesToChange.length) {
+                    this.changePropertiesValues(propertiesToChange);
+                }
+            };
             WithValidation.prototype.initializeValidatedProperties = function () {
-                return validatedProperties_1.toValidatedProperties(properties.concat(validatedProperties_1.dynamicValidationProperties(propertiesGenerator, this.props)), this.props);
+                this.computedProperties = properties.concat(validatedProperties_1.dynamicValidationProperties(propertiesGenerator, this.props));
+                return validatedProperties_1.toValidatedProperties(this.computedProperties, this.props);
             };
             WithValidation.prototype.prepareValidatedPropertiesForChild = function () {
                 var _this = this;
@@ -68,6 +99,16 @@ function validate(properties, propertiesGenerator) {
                     errorsCount: errorsCount
                 };
                 return propertiesForChild;
+            };
+            WithValidation.prototype.changePropertiesValues = function (propsToChange) {
+                this.setState(function (prevState) {
+                    var newState = __assign({}, prevState);
+                    propsToChange.forEach(function (_a) {
+                        var path = _a[0], value = _a[1];
+                        set(newState.properties, path + ".value", value);
+                    });
+                    return newState;
+                });
             };
             WithValidation.prototype.changePropertyValue = function (propertyPath, newValue) {
                 this.setState(function (prevState) {

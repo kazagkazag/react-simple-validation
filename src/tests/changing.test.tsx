@@ -72,5 +72,35 @@ describe("validate", () => {
             "Test new value"
         );
     });
+
+    test("should change property initialized from external props whenever it updates", () => {
+        const testComponentWithValidation = mountTestComponent(
+            [
+                {
+                    name: "testProp1",
+                    initialValueFromProps: true,
+                    syncValue: true,
+                    validators: [
+                        {
+                            fn: (value: any) => !!value,
+                            error: "Some error"
+                        }
+                    ],
+                    error: "Some error"
+                }
+            ],
+            {
+                testProp1: "Old value"
+            }
+        );
+
+        testComponentWithValidation.setProps({
+            testProp1: "Entire new value"
+        });
+
+        expect(testComponentWithValidation.find(".testProp1Value").text()).toBe(
+            "Entire new value"
+        );
+    });
 });
 /* tslint:enable max-classes-per-file */

@@ -22,6 +22,7 @@ export interface Property {
     name: string;
     value?: any;
     initialValueFromProps?: boolean | PropsGetter;
+    syncValue?: boolean | PropsGetter;
     validators?: PropertyValidator[];
     error?: string;
 }

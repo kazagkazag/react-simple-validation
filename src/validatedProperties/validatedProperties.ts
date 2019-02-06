@@ -102,11 +102,11 @@ function getInitialValue(prop: Property, props: any) {
     return prop.value === undefined ? "" : prop.value;
 }
 
-function getValueFromOriginalPropsByName(propName: string, props: any) {
+export function getValueFromOriginalPropsByName(propName: string, props: any) {
     return get(props, propName);
 }
 
-function getValueFromOriginalPropsUsingFn(
+export function getValueFromOriginalPropsUsingFn(
     getter: PropsGetter,
     props: any
 ): any {

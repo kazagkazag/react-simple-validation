@@ -45,7 +45,7 @@ export function mountTestComponent(config: any, parentProps: any = {}) {
 
     class PropsProvider extends React.Component<any, any> {
         public render() {
-            return <TestComponent {...parentProps} />;
+            return <TestComponent {...parentProps} {...this.props} />;
         }
     }
 

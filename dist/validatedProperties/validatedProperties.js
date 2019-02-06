@@ -64,7 +64,9 @@ function getInitialValue(prop, props) {
 function getValueFromOriginalPropsByName(propName, props) {
     return get(props, propName);
 }
+exports.getValueFromOriginalPropsByName = getValueFromOriginalPropsByName;
 function getValueFromOriginalPropsUsingFn(getter, props) {
     return getter(props);
 }
+exports.getValueFromOriginalPropsUsingFn = getValueFromOriginalPropsUsingFn;
 //# sourceMappingURL=validatedProperties.js.map
