@@ -1,10 +1,14 @@
 import * as React from "react";
 import set = require("lodash.set");
 import get = require("lodash.get");
+import {
+    dynamicValidationProperties,
+    toValidatedProperties,
+    createValidateAll
+} from "./validatedProperties/validatedProperties";
 
-interface Validator {
-    fn: (value: any, properties?: any) => boolean;
-    error?: string;
+export interface ValidateAllResultErrors {
+    [propertyName: string]: string[];
 }
 
 export interface ValidateAllResult {
@@ -12,11 +16,12 @@ export interface ValidateAllResult {
     errors?: ValidateAllResultErrors;
 }
 
-interface ValidateAllResultErrors {
-    [propertyName: string]: string;
+interface Validator {
+    fn: (value: any, properties?: any) => boolean;
+    error?: string;
 }
 
-type PropsGetter = (props: any) => any;
+export type PropsGetter = (props: any) => any;
 
 export interface Property {
     name: string;
@@ -26,7 +31,7 @@ export interface Property {
     error?: string;
 }
 
-interface PropertyInState {
+export interface PropertyInState {
     name: string;
     value: any;
     errors: string[];
@@ -36,11 +41,13 @@ interface PropertyInState {
 }
 
 interface FormValidator {
-    validateAll: (callback?: () => void) => boolean;
     errorsCount: number;
+    validateAll(
+        callback?: (results: ValidateAllResult) => void
+    ): ValidateAllResult;
 }
 
-interface PropertyInChildrenProps {
+export interface PropertyInChildrenProps {
     value: string | boolean;
     errors: string[];
     change: (newValue: any) => void;
@@ -48,7 +55,7 @@ interface PropertyInChildrenProps {
     cleanErrors: () => void;
 }
 
-interface PropertiesInChildrenProps {
+export interface PropertiesInChildrenProps {
     [key: string]: FormValidator | PropertyInChildrenProps;
 }
 
@@ -64,7 +71,10 @@ interface WithValidationState {
 
 type PropertiesGenerator = (props: PossibleProps) => Property[];
 
-export function validate(properties: Property[], propertiesGenerator?: PropertiesGenerator) {
+export function validate(
+    properties: Property[],
+    propertiesGenerator?: PropertiesGenerator
+) {
     // todo: validate properties!
     // example: do not allow to set external property with initial value
 
@@ -94,69 +104,27 @@ export function validate(properties: Property[], propertiesGenerator?: Propertie
             }
 
             private initializeValidatedProperties() {
-                const validationProps = {} as {
-                    [key: string]: PropertyInState;
-                };
-
-                [...properties, ...this.dynamicValidationProps()]
-                    .forEach((prop: Property) => {
-                        validationProps[prop.name] = {
-                            value: this.getInitialValue(prop),
-                            errors: [],
-                            name: prop.name,
-                            validators: prop.validators || [],
-                            fallbackError: prop.error
-                        } as PropertyInState;
-                    });
-
-                return validationProps;
-            }
-
-            private dynamicValidationProps() {
-                if (typeof propertiesGenerator !== "function") {
-                    return [];
-                }
-
-                return propertiesGenerator(this.props);
-            }
-
-            private getInitialValue(prop: Property) {
-                const getInitialValueFromPropsBasedOnName =
-                    prop.initialValueFromProps === true;
-
-                if (getInitialValueFromPropsBasedOnName) {
-                    return this.getValueFromOriginalPropsByName(prop.name);
-                }
-
-                const getInitialValueFromPropsUsingFunction =
-                    typeof prop.initialValueFromProps === "function";
-
-                if (getInitialValueFromPropsUsingFunction) {
-                    return this.getValueFromOriginalPropsUsingFn(
-                        prop.initialValueFromProps as PropsGetter
-                    );
-                }
-
-                return prop.value === undefined ? "" : prop.value;
-            }
-
-            private getValueFromOriginalPropsByName(propName: string) {
-                return get(this.props, propName);
-            }
-
-            private getValueFromOriginalPropsUsingFn(getter: PropsGetter): any {
-                return getter(this.props);
+                return toValidatedProperties(
+                    [
+                        ...properties,
+                        ...dynamicValidationProperties(
+                            propertiesGenerator,
+                            this.props
+                        )
+                    ],
+                    this.props
+                );
             }
 
             private prepareValidatedPropertiesForChild() {
-                const validationProperties: PropertiesInChildrenProps = {};
+                const propertiesForChild: PropertiesInChildrenProps = {};
                 let errorsCount = 0;
 
                 Object.keys(this.state.properties).forEach(
                     (propertyName: string) => {
                         const property = this.state.properties[propertyName];
 
-                        validationProperties[propertyName] = {
+                        propertiesForChild[propertyName] = {
                             value: property.value,
                             errors: property.errors,
                             change: this.getChanger(property),
@@ -168,67 +136,21 @@ export function validate(properties: Property[], propertiesGenerator?: Propertie
                     }
                 );
 
-                function validateAll(
-                    callback?: (result: { isValid: boolean, errors: any }) => void
-                ) {
-                    let isAllValid = true;
-                    const allErrors = {} as { [key: string]: string[] };
-
-                    function validateSingle(property: any) {
-                        return property.validate();
-                    }
-
-                    Object.keys(validationProperties).forEach(
-                        (propertyName: string) => {
-                            if (
-                                (validationProperties[
-                                    propertyName
-                                ] as PropertyInChildrenProps).validate
-                            ) {
-                                const { isValid, errors } = validateSingle(
-                                    validationProperties[propertyName]
-                                );
-
-                                if (!isValid) {
-                                    isAllValid = false;
-                                    allErrors[propertyName] = errors;
-                                }
-                            }
-                        }
-                    );
-
-                    const validateAllResult = {
-                        isValid: isAllValid,
-                        errors: isAllValid ? null : allErrors
-                    };
-
-                    if (callback) {
-                        this.forceUpdate(() => callback(validateAllResult));
-                    }
-
-                    return validateAllResult;
-                }
-
-                validationProperties.validator = {
-                    validateAll: validateAll.bind(this),
+                propertiesForChild.validator = {
+                    validateAll: createValidateAll(
+                        propertiesForChild,
+                        this.forceUpdate.bind(this)
+                    ),
                     errorsCount
                 };
 
-                return validationProperties;
+                return propertiesForChild;
             }
 
             private changePropertyValue(propertyPath: string, newValue: any) {
                 this.setState((prevState: any) => {
                     const newState = { ...prevState };
-                    try {
-                        newState.properties[propertyPath].value = newValue;
-                    } catch (e) {
-                        set(
-                            newState.properties,
-                            `${propertyPath}.value`,
-                            newValue
-                        );
-                    }
+                    set(newState.properties, `${propertyPath}.value`, newValue);
                     return newState;
                 });
             }
@@ -252,24 +174,10 @@ export function validate(properties: Property[], propertiesGenerator?: Propertie
 
             private getValidator(property: Property) {
                 return () => {
-                    let currentPropertyState: PropertyInState;
-                    // try to get property by name from state
-                    // if there is property with dot in the name
-                    // then it should be found
-                    // if not found, try to get property by path, using lodash
-                    // if there is path to property, then try {} will fail
-                    // and property will be obtained by lodash
-                    try {
-                        currentPropertyState =
-                            this.state.properties[property.name] !== undefined
-                                ? this.state.properties[property.name]
-                                : get(this.state.properties, property.name);
-                    } catch (e) {
-                        currentPropertyState = get(
-                            this.state.properties,
-                            property.name
-                        );
-                    }
+                    const currentPropertyState: PropertyInState = get(
+                        this.state.properties,
+                        property.name
+                    );
                     const errors: string[] = [];
 
                     property.validators.forEach((validator: Validator) => {
@@ -292,26 +200,22 @@ export function validate(properties: Property[], propertiesGenerator?: Propertie
 
                     if (errors.length) {
                         const newState = { ...this.state };
-                        try {
-                            newState.properties[property.name].errors = errors;
-                        } catch (e) {
-                            set(
-                                newState.properties,
-                                `${property.name}.errors`,
-                                errors
-                            );
-                        }
+                        set(
+                            newState.properties,
+                            `${property.name}.errors`,
+                            errors
+                        );
 
                         if (
-                            (get(
+                            ((get(
                                 newState.properties,
                                 `${property.name}.errors`
-                            ) as unknown as string[]).length
+                            ) as unknown) as string[]).length
                         ) {
-                            afterValidationErrors = get(
+                            afterValidationErrors = (get(
                                 newState.properties,
                                 `${property.name}.errors`
-                            ) as unknown as string[];
+                            ) as unknown) as string[];
                         }
 
                         this.setState(newState);
@@ -329,14 +233,10 @@ export function validate(properties: Property[], propertiesGenerator?: Propertie
             }
 
             private getCurrentPropertyValue(property: PropertyInState) {
-                try {
-                    return this.state.properties[property.name].value;
-                } catch (e) {
-                    return (get(
-                        this.state.properties,
-                        property.name
-                    ) as PropertyInState).value;
-                }
+                return (get(
+                    this.state.properties,
+                    property.name
+                ) as PropertyInState).value;
             }
         };
     };

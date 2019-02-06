@@ -3,7 +3,7 @@
 // Definitions by: Kamil Zagrabski
 
 interface ValidateAllResultErrors {
-    [propertyName: string]: string;
+    [propertyName: string]: string[];
 }
 
 export interface ValidateAllResult {

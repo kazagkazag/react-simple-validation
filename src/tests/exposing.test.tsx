@@ -26,6 +26,16 @@ describe("validate", () => {
                         error: "Some error"
                     }
                 ]
+            },
+            {
+                name: "testProp3.withDot",
+                value: false,
+                validators: [
+                    {
+                        fn: (value: any) => !!value,
+                        error: "Some error"
+                    }
+                ]
             }
         ]);
 
@@ -42,6 +52,12 @@ describe("validate", () => {
         expect(checker.props().testProp2.errors).toEqual([]);
         expect(typeof checker.props().testProp2.validate).toBe("function");
         expect(typeof checker.props().testProp2.cleanErrors).toBe("function");
+
+        expect(checker.props()["testProp3.withDot"].value).toBe(false);
+        expect(typeof checker.props()["testProp3.withDot"].change).toBe("function");
+        expect(checker.props()["testProp3.withDot"].errors).toEqual([]);
+        expect(typeof checker.props()["testProp3.withDot"].validate).toBe("function");
+        expect(typeof checker.props()["testProp3.withDot"].cleanErrors).toBe("function");
 
         expect(typeof checker.props().validator.validateAll).toBe("function");
     });
