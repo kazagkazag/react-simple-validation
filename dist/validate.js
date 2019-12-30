@@ -1,21 +1,27 @@
 "use strict";
 var __extends = (this && this.__extends) || (function () {
-    var extendStatics = Object.setPrototypeOf ||
-        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
     return function (d, b) {
         extendStatics(d, b);
         function __() { this.constructor = d; }
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     };
 })();
-var __assign = (this && this.__assign) || Object.assign || function(t) {
-    for (var s, i = 1, n = arguments.length; i < n; i++) {
-        s = arguments[i];
-        for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
-            t[p] = s[p];
-    }
-    return t;
+var __assign = (this && this.__assign) || function () {
+    __assign = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+        }
+        return t;
+    };
+    return __assign.apply(this, arguments);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var React = require("react");
@@ -29,9 +35,15 @@ function validate(properties) {
             __extends(WithValidation, _super);
             function WithValidation(props) {
                 var _this = _super.call(this, props) || this;
+                _this.synchronousState = {};
                 _this.state = {
                     properties: {}
                 };
+                _this.synchronousState = {
+                    properties: {}
+                };
+                _this.setStates = _this.setStates.bind(_this);
+                _this.getState = _this.getState.bind(_this);
                 return _this;
             }
             WithValidation.prototype.componentDidMount = function () {
@@ -40,6 +52,13 @@ function validate(properties) {
             WithValidation.prototype.render = function () {
                 var validatedProperties = this.prepareValidatedPropertiesForChild();
                 return (React.createElement(BaseComponent, __assign({}, this.props, validatedProperties)));
+            };
+            WithValidation.prototype.setStates = function (updater, callback) {
+                this.synchronousState = updater(this.synchronousState);
+                this.setState(updater, callback);
+            };
+            WithValidation.prototype.getState = function () {
+                return this.synchronousState;
             };
             WithValidation.prototype.initializeValidatedProperties = function () {
                 var _this = this;
@@ -64,9 +83,9 @@ function validate(properties) {
                             fallbackError: prop.error
                         };
                 });
-                this.setState({
+                this.setStates(function () { return ({
                     properties: validationProps
-                });
+                }); });
             };
             WithValidation.prototype.getInitialValue = function (prop) {
                 var getInitialValueFromPropsBasedOnName = prop.initialValueFromProps === true;
@@ -77,7 +96,7 @@ function validate(properties) {
                 if (getInitialValueFromPropsUsingFunction) {
                     return this.getValueFromOriginalPropsUsingFn(prop.initialValueFromProps);
                 }
-                return prop.value;
+                return prop.value === undefined ? "" : prop.value;
             };
             WithValidation.prototype.getValueFromOriginalPropsByName = function (propName) {
                 return get(this.props, propName);
@@ -89,8 +108,8 @@ function validate(properties) {
                 var _this = this;
                 var validationProperties = {};
                 var errorsCount = 0;
-                Object.keys(this.state.properties).forEach(function (propertyName) {
-                    var property = _this.state.properties[propertyName];
+                Object.keys(this.getState().properties).forEach(function (propertyName) {
+                    var property = _this.getState().properties[propertyName];
                     var isList = Array.isArray(property);
                     validationProperties[propertyName] = isList
                         ? property.map(function (propertyItem) {
@@ -115,13 +134,17 @@ function validate(properties) {
                     }
                 });
                 function validateAll(callback) {
+                    var isAllValid = true;
                     function validateSingle(property) {
-                        property.validate();
+                        return property.validate();
                     }
                     function traverseProperties(validatedProperties) {
                         Object.keys(validatedProperties).forEach(function (propertyName) {
                             if (validatedProperties[propertyName].validate) {
-                                validateSingle(validatedProperties[propertyName]);
+                                var isPropertyValid = validateSingle(validatedProperties[propertyName]);
+                                if (!isPropertyValid) {
+                                    isAllValid = false;
+                                }
                             }
                             else if (Array.isArray(validatedProperties[propertyName])) {
                                 traverseProperties(validatedProperties[propertyName]);
@@ -132,6 +155,7 @@ function validate(properties) {
                     if (callback) {
                         this.forceUpdate(callback);
                     }
+                    return isAllValid;
                 }
                 validationProperties.validator = {
                     validateAll: validateAll.bind(this),
@@ -140,7 +164,7 @@ function validate(properties) {
                 return validationProperties;
             };
             WithValidation.prototype.changePropertyValue = function (propertyPath, newValue) {
-                this.setState(function (prevState) {
+                this.setStates(function (prevState) {
                     var newState = __assign({}, prevState);
                     try {
                         newState.properties[propertyPath].value = newValue;
@@ -152,7 +176,7 @@ function validate(properties) {
                 });
             };
             WithValidation.prototype.cleanPropertyErrors = function (propertyPath) {
-                this.setState(function (prevState) {
+                this.setStates(function (prevState) {
                     var newState = __assign({}, prevState);
                     try {
                         newState.properties[propertyPath].errors = [];
@@ -181,22 +205,23 @@ function validate(properties) {
                     // and property will be obtained by lodash
                     try {
                         currentPropertyState =
-                            _this.state.properties[property.name] !== undefined
-                                ? _this.state.properties[property.name]
-                                : get(_this.state.properties, property.name);
+                            _this.getState().properties[property.name] !==
+                                undefined
+                                ? _this.getState().properties[property.name]
+                                : get(_this.getState().properties, property.name);
                     }
                     catch (e) {
-                        currentPropertyState = get(_this.state.properties, property.name);
+                        currentPropertyState = get(_this.getState().properties, property.name);
                     }
                     var errors = [];
                     property.validators.forEach(function (validator) {
-                        if (!validator.fn(_this.getCurrentPropertyValue(currentPropertyState), _this.state.properties)) {
+                        if (!validator.fn(_this.getCurrentPropertyValue(currentPropertyState), _this.getState().properties)) {
                             errors.push(validator.error ||
                                 currentPropertyState.fallbackError);
                         }
                     });
                     if (errors.length) {
-                        _this.setState(function (prevState) {
+                        _this.setStates(function (prevState) {
                             var newState = __assign({}, prevState);
                             try {
                                 newState.properties[property.name].errors = errors;
@@ -207,6 +232,7 @@ function validate(properties) {
                             return newState;
                         });
                     }
+                    return errors.length === 0 ? true : false;
                 };
             };
             WithValidation.prototype.getErrorCleaner = function (property) {
@@ -214,10 +240,10 @@ function validate(properties) {
             };
             WithValidation.prototype.getCurrentPropertyValue = function (property) {
                 try {
-                    return this.state.properties[property.name].value;
+                    return this.getState().properties[property.name].value;
                 }
                 catch (e) {
-                    return get(this.state.properties, property.name).value;
+                    return get(this.getState().properties, property.name).value;
                 }
             };
             return WithValidation;
