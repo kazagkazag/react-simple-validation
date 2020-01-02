@@ -339,23 +339,21 @@ export function validate(properties: Property[]) {
                         }
                     });
 
-                    if (errors.length) {
-                        this.setStates((prevState: any) => {
-                            const newState = { ...prevState };
-                            try {
-                                newState.properties[
-                                    property.name
-                                ].errors = errors;
-                            } catch (e) {
-                                set(
-                                    newState.properties,
-                                    `${property.name}.errors`,
-                                    errors
-                                );
-                            }
-                            return newState;
-                        });
-                    }
+                    this.setStates((prevState: any) => {
+                        const newState = { ...prevState };
+                        try {
+                            newState.properties[
+                                property.name
+                            ].errors = errors;
+                        } catch (e) {
+                            set(
+                                newState.properties,
+                                `${property.name}.errors`,
+                                errors
+                            );
+                        }
+                        return newState;
+                    });
 
                     return errors.length === 0 ? true : false;
                 };
