@@ -96,13 +96,13 @@ export function validate(
             constructor(props: any) {
                 super(props);
 
-                const properties = this.initializeValidatedProperties();
+                const initliazedProps = this.initializeValidatedProperties();
 
                 this.state = {
-                    properties
+                    properties: initliazedProps
                 };
                 this.synchronousState = {
-                    properties
+                    properties: initliazedProps
                 };
 
                 this.setStates = this.setStates.bind(this);
@@ -292,28 +292,22 @@ export function validate(
 
                     let afterValidationErrors: string[] = null;
 
-                    if (errors.length) {
-                        const newState = { ...this.state };
-                        set(
+                    const newState = { ...this.state };
+                    set(newState.properties, `${property.name}.errors`, errors);
+
+                    if (
+                        ((get(
                             newState.properties,
-                            `${property.name}.errors`,
-                            errors
-                        );
-
-                        if (
-                            ((get(
-                                newState.properties,
-                                `${property.name}.errors`
-                            ) as unknown) as string[]).length
-                        ) {
-                            afterValidationErrors = (get(
-                                newState.properties,
-                                `${property.name}.errors`
-                            ) as unknown) as string[];
-                        }
-
-                        this.setStates(() => newState);
+                            `${property.name}.errors`
+                        ) as unknown) as string[]).length
+                    ) {
+                        afterValidationErrors = (get(
+                            newState.properties,
+                            `${property.name}.errors`
+                        ) as unknown) as string[];
                     }
+
+                    this.setStates(() => newState);
 
                     return {
                         isValid: afterValidationErrors === null,

@@ -23,6 +23,13 @@ var __assign = (this && this.__assign) || function () {
     };
     return __assign.apply(this, arguments);
 };
+var __spreadArrays = (this && this.__spreadArrays) || function () {
+    for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
+    for (var r = Array(s), k = 0, i = 0; i < il; i++)
+        for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)
+            r[k] = a[j];
+    return r;
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 var React = require("react");
 var set = require("lodash.set");
@@ -37,9 +44,16 @@ function validate(properties, propertiesGenerator) {
             function WithValidation(props) {
                 var _this = _super.call(this, props) || this;
                 _this.computedProperties = [];
+                _this.synchronousState = {};
+                var initliazedProps = _this.initializeValidatedProperties();
                 _this.state = {
-                    properties: _this.initializeValidatedProperties()
+                    properties: initliazedProps
                 };
+                _this.synchronousState = {
+                    properties: initliazedProps
+                };
+                _this.setStates = _this.setStates.bind(_this);
+                _this.getState = _this.getState.bind(_this);
                 return _this;
             }
             WithValidation.prototype.componentDidUpdate = function (oldProps) {
@@ -48,6 +62,13 @@ function validate(properties, propertiesGenerator) {
             WithValidation.prototype.render = function () {
                 var validatedProperties = this.prepareValidatedPropertiesForChild();
                 return (React.createElement(BaseComponent, __assign({}, this.props, validatedProperties)));
+            };
+            WithValidation.prototype.setStates = function (updater, callback) {
+                this.synchronousState = updater(this.synchronousState);
+                this.setState(updater, callback);
+            };
+            WithValidation.prototype.getState = function () {
+                return this.synchronousState;
             };
             WithValidation.prototype.syncValues = function (oldProps) {
                 var _this = this;
@@ -76,15 +97,15 @@ function validate(properties, propertiesGenerator) {
                 }
             };
             WithValidation.prototype.initializeValidatedProperties = function () {
-                this.computedProperties = properties.concat(validatedProperties_1.dynamicValidationProperties(propertiesGenerator, this.props));
+                this.computedProperties = __spreadArrays(properties, validatedProperties_1.dynamicValidationProperties(propertiesGenerator, this.props));
                 return validatedProperties_1.toValidatedProperties(this.computedProperties, this.props);
             };
             WithValidation.prototype.prepareValidatedPropertiesForChild = function () {
                 var _this = this;
                 var propertiesForChild = {};
                 var errorsCount = 0;
-                Object.keys(this.state.properties).forEach(function (propertyName) {
-                    var property = _this.state.properties[propertyName];
+                Object.keys(this.getState().properties).forEach(function (propertyName) {
+                    var property = _this.getState().properties[propertyName];
                     propertiesForChild[propertyName] = {
                         value: property.value,
                         errors: property.errors,
@@ -101,7 +122,7 @@ function validate(properties, propertiesGenerator) {
                 return propertiesForChild;
             };
             WithValidation.prototype.changePropertiesValues = function (propsToChange) {
-                this.setState(function (prevState) {
+                this.setStates(function (prevState) {
                     var newState = __assign({}, prevState);
                     propsToChange.forEach(function (_a) {
                         var path = _a[0], value = _a[1];
@@ -111,14 +132,14 @@ function validate(properties, propertiesGenerator) {
                 });
             };
             WithValidation.prototype.changePropertyValue = function (propertyPath, newValue) {
-                this.setState(function (prevState) {
+                this.setStates(function (prevState) {
                     var newState = __assign({}, prevState);
                     set(newState.properties, propertyPath + ".value", newValue);
                     return newState;
                 });
             };
             WithValidation.prototype.cleanPropertyErrors = function (propertyPath) {
-                this.setState(function (prevState) {
+                this.setStates(function (prevState) {
                     var newState = __assign({}, prevState);
                     try {
                         newState.properties[propertyPath].errors = [];
@@ -138,23 +159,21 @@ function validate(properties, propertiesGenerator) {
             WithValidation.prototype.getValidator = function (property) {
                 var _this = this;
                 return function () {
-                    var currentPropertyState = get(_this.state.properties, property.name);
+                    var currentPropertyState = get(_this.getState().properties, property.name);
                     var errors = [];
                     property.validators.forEach(function (validator) {
-                        if (!validator.fn(_this.getCurrentPropertyValue(currentPropertyState), _this.state.properties)) {
+                        if (!validator.fn(_this.getCurrentPropertyValue(currentPropertyState), _this.getState().properties)) {
                             errors.push(validator.error ||
                                 currentPropertyState.fallbackError);
                         }
                     });
                     var afterValidationErrors = null;
-                    if (errors.length) {
-                        var newState = __assign({}, _this.state);
-                        set(newState.properties, property.name + ".errors", errors);
-                        if (get(newState.properties, property.name + ".errors").length) {
-                            afterValidationErrors = get(newState.properties, property.name + ".errors");
-                        }
-                        _this.setState(newState);
+                    var newState = __assign({}, _this.state);
+                    set(newState.properties, property.name + ".errors", errors);
+                    if (get(newState.properties, property.name + ".errors").length) {
+                        afterValidationErrors = get(newState.properties, property.name + ".errors");
                     }
+                    _this.setStates(function () { return newState; });
                     return {
                         isValid: afterValidationErrors === null,
                         errors: afterValidationErrors
@@ -165,7 +184,7 @@ function validate(properties, propertiesGenerator) {
                 return this.cleanPropertyErrors.bind(this, property.name);
             };
             WithValidation.prototype.getCurrentPropertyValue = function (property) {
-                return get(this.state.properties, property.name).value;
+                return get(this.getState().properties, property.name).value;
             };
             return WithValidation;
         }(React.Component));

@@ -52,6 +52,59 @@ describe("validate", () => {
         ]);
     });
 
+    test("should be able to clear validation error when subsequent validation succeeded", () => {
+        const Checker = (props: any) => {
+            return (
+                <div>
+                    <input id="invalid" onChange={() => props.testProp1.change("")} />
+                    <input id="valid" onChange={() => props.testProp1.change("valid value")} />
+                    <button
+                        onClick={() => {
+                            props.testProp1.validate();
+                        }}
+                    >
+                        Test
+                    </button>
+                </div>
+            );
+        };
+
+        @validate([{
+            name: "testProp1",
+            value: "",
+            validators: [{
+                fn: (value: any) => value.length > 0,
+                error: "Validator error 1"
+            }, {
+                fn: (value: any) => value.length > 1,
+                error: "Validator error 2"
+            }],
+            error: "Some error"
+        }])
+        class TestComponent extends React.Component<any, any> {
+            public render() {
+                return <Checker {...this.props} />;
+            }
+        }
+
+        const testComponentWithValidation = mount(<TestComponent/>);
+
+        testComponentWithValidation.find(Checker).find("input#invalid").simulate("change");
+        testComponentWithValidation.find(Checker).find("button").simulate("click");
+
+        expect(testComponentWithValidation.state().properties.testProp1.value).toBe("");
+        expect(testComponentWithValidation.state().properties.testProp1.errors).toEqual([
+            "Validator error 1",
+            "Validator error 2"
+        ]);
+
+        testComponentWithValidation.find(Checker).find("input#valid").simulate("change");
+        testComponentWithValidation.find(Checker).find("button").simulate("click");
+
+        expect(testComponentWithValidation.state().properties.testProp1.value).toBe("valid value");
+        expect(testComponentWithValidation.state().properties.testProp1.errors).toEqual([]);
+    });
+
     test("should be able to collect validation error from fallback error", () => {
         const Checker = (props: any) => {
             return (
