@@ -34,7 +34,7 @@
         "enzyme-adapter-react-16": "^1.0.0",
         "es6-promise": "4.1.1",
         "jest": "21.2.1",
-        "jsdom": "11.3.0",
+        "jsdom": "16.5.0",
         "react": "16.0.0",
         "react-dom": "16.0.0",
         "react-test-renderer": "16.0.0",
